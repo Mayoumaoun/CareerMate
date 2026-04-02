@@ -32,8 +32,8 @@ export class ProfileEntity {
     @Column({ type: 'jsonb' })
     experiences: jsonSchemas.ExperienceItem[];
 
-    @Column({ type: 'jsonb' })
-    targetPosition: jsonSchemas.TargetPosition;
+    @Column({ type: 'jsonb', nullable: true })
+    targetPosition: jsonSchemas.TargetPosition | null;
 
     @Column({ type: 'jsonb' })
     education: jsonSchemas.EducationItem[];
@@ -43,10 +43,10 @@ export class ProfileEntity {
 
     @Column({ type: 'jsonb' })
     certifications: jsonSchemas.CertificationItem[];
-    @Column({type: 'text'})
-    shortTermGoals: string;
-    @Column({type: 'text'})
-    longTermGoals: string;
+    @Column({type: 'text', nullable: true})
+    shortTermGoals: string | null;
+    @Column({type: 'text', nullable: true})
+    longTermGoals: string | null;
 
     @OneToOne(() => UserEntity, (user: UserEntity) => user.profile)
     @JoinColumn()

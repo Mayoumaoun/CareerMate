@@ -1,0 +1,425 @@
+### Profile API Examples
+### Copy and paste these into a .http file or use REST Client extension
+
+@baseUrl = http://localhost:3000/api
+@userId = 1
+
+###
+### 1. CREATE COMPLETE PROFILE (All Steps at Once)
+###
+POST {{baseUrl}}/profile
+Content-Type: application/json
+
+{
+  "step1": {
+    "firstName": "Ahmed",
+    "lastName": "Ben Mohamed",
+    "phone": "+21625123456",
+    "country": "Tunisia",
+    "city": "Tunis",
+    "dateOfBirth": "1998-05-15",
+    "gender": "male",
+    "email": "ahmed@example.com",
+    "address": "123 Avenue de la Liberté",
+    "zipCode": "1001"
+  },
+  "step2": {
+    "userLevel": "Junior",
+    "education": [
+      {
+        "degree": "Licence Informatique",
+        "institution": "Université de Tunis",
+        "field": "Computer Science",
+        "startDate": "2020-09-01",
+        "endDate": "2023-06-30"
+      }
+    ]
+  },
+  "step3": {
+    "skills": [
+      {
+        "name": "React",
+        "category": "tech",
+        "level": "intermediate"
+      },
+      {
+        "name": "Node.js",
+        "category": "tech",
+        "level": "intermediate"
+      },
+      {
+        "name": "TypeScript",
+        "category": "tech",
+        "level": "intermediate"
+      },
+      {
+        "name": "Communication",
+        "category": "soft",
+        "level": "advanced"
+      }
+    ]
+  },
+  "step4": {
+    "experiences": [
+      {
+        "title": "Full Stack Developer",
+        "company": "TechCorp Tunisia",
+        "location": "Tunis",
+        "startDate": "2023-01-15",
+        "endDate": "2024-01-15",
+        "description": "Built and maintained web applications using React and Node.js"
+      }
+    ]
+  },
+  "step5": {
+    "projects": [
+      {
+        "title": "E-Commerce Platform",
+        "context": "personal",
+        "description": "Full-stack e-commerce platform with payment integration",
+        "projectUrl": "https://ecommerce.example.com",
+        "techStack": ["React", "Node.js", "PostgreSQL"],
+        "date": "2023-06-01"
+      }
+    ]
+  },
+  "step6": {
+    "languages": [
+      {
+        "language": "English",
+        "level": "C1"
+      },
+      {
+        "language": "Arabic",
+        "level": "native"
+      },
+      {
+        "language": "French",
+        "level": "B2"
+      }
+    ]
+  },
+  "step7": {
+    "certifications": [
+      {
+        "name": "AWS Solutions Architect Associate",
+        "organization": "Amazon",
+        "date": "2023-08-01",
+        "domain": "Cloud Computing",
+        "context": "Professional certification",
+        "url": "https://aws.amazon.com"
+      }
+    ]
+  }
+}
+
+###
+### 2. GET USER PROFILE
+###
+GET {{baseUrl}}/profile/{{userId}}
+
+###
+### 3. GET PROFILE SUMMARY
+###
+GET {{baseUrl}}/profile/{{userId}}/summary
+
+###
+### STEP-BY-STEP UPDATES
+###
+
+### UPDATE STEP 1: Personal Information
+PUT {{baseUrl}}/profile/step/1
+Content-Type: application/json
+
+{
+  "firstName": "Ahmed",
+  "lastName": "Ben Mohamed",
+  "phone": "+21625987654",
+  "country": "Tunisia",
+  "city": "Sfax",
+  "dateOfBirth": "1998-05-15",
+  "gender": "male",
+  "email": "ahmed.new@example.com",
+  "address": "456 Rue de la République",
+  "zipCode": "3000"
+}
+
+###
+### UPDATE STEP 2: Education & Level
+PUT {{baseUrl}}/profile/step/2
+Content-Type: application/json
+
+{
+  "userLevel": "Senior",
+  "education": [
+    {
+      "degree": "Licence Informatique",
+      "institution": "Université de Tunis",
+      "field": "Computer Science",
+      "startDate": "2020-09-01",
+      "endDate": "2023-06-30"
+    },
+    {
+      "degree": "Master Informatique Avancée",
+      "institution": "Université de Sousse",
+      "field": "Advanced Computer Science",
+      "startDate": "2023-09-01"
+    }
+  ]
+}
+
+###
+### UPDATE STEP 3: Skills
+PUT {{baseUrl}}/profile/step/3
+Content-Type: application/json
+
+{
+  "skills": [
+    {
+      "name": "React",
+      "category": "tech",
+      "level": "advanced"
+    },
+    {
+      "name": "NestJS",
+      "category": "tech",
+      "level": "advanced"
+    },
+    {
+      "name": "TypeScript",
+      "category": "tech",
+      "level": "advanced"
+    },
+    {
+      "name": "PostgreSQL",
+      "category": "tech",
+      "level": "intermediate"
+    },
+    {
+      "name": "Docker",
+      "category": "tool",
+      "level": "intermediate"
+    },
+    {
+      "name": "Leadership",
+      "category": "soft",
+      "level": "advanced"
+    }
+  ]
+}
+
+###
+### UPDATE STEP 4: Experiences
+PUT {{baseUrl}}/profile/step/4
+Content-Type: application/json
+
+{
+  "experiences": [
+    {
+      "title": "Senior Full Stack Developer",
+      "company": "TechCorp Tunisia",
+      "location": "Tunis",
+      "startDate": "2023-01-15",
+      "endDate": "2024-06-30",
+      "description": "Led development of web applications using React and Node.js, managed team of 3 developers"
+    },
+    {
+      "title": "Junior Full Stack Developer",
+      "company": "StartupXYZ",
+      "location": "Sfax",
+      "startDate": "2022-06-01",
+      "endDate": "2022-12-31",
+      "description": "Built API endpoints and frontend components using React and Express.js"
+    }
+  ]
+}
+
+###
+### UPDATE STEP 5: Projects
+PUT {{baseUrl}}/profile/step/5
+Content-Type: application/json
+
+{
+  "projects": [
+    {
+      "title": "E-Commerce Platform",
+      "context": "personal",
+      "description": "Full-stack e-commerce platform with real-time inventory and payment integration",
+      "projectUrl": "https://ecommerce-example.com",
+      "techStack": ["React", "Node.js", "PostgreSQL", "Stripe"],
+      "date": "2023-06-01"
+    },
+    {
+      "title": "Task Management App",
+      "context": "professional",
+      "description": "Collaborative task management application with real-time updates",
+      "projectUrl": "https://taskapp-example.com",
+      "techStack": ["React", "NestJS", "MongoDB", "Socket.io"],
+      "date": "2023-09-15"
+    }
+  ]
+}
+
+###
+### UPDATE STEP 6: Languages
+PUT {{baseUrl}}/profile/step/6
+Content-Type: application/json
+
+{
+  "languages": [
+    {
+      "language": "English",
+      "level": "C1"
+    },
+    {
+      "language": "Arabic",
+      "level": "native"
+    },
+    {
+      "language": "French",
+      "level": "B2"
+    }
+  ]
+}
+
+###
+### UPDATE STEP 7: Certifications
+PUT {{baseUrl}}/profile/step/7
+Content-Type: application/json
+
+{
+  "certifications": [
+    {
+      "name": "AWS Solutions Architect Associate",
+      "organization": "Amazon",
+      "date": "2023-08-01",
+      "domain": "Cloud Computing",
+      "context": "Professional certification",
+      "url": "https://aws.amazon.com/certificates"
+    },
+    {
+      "name": "React Advanced Patterns",
+      "organization": "Frontend Masters",
+      "date": "2023-05-15",
+      "domain": "Web Development",
+      "context": "Online course certification",
+      "url": "https://frontendmasters.com"
+    }
+  ]
+}
+
+
+###
+### UPDATE STEP 6: Languages
+PUT {{baseUrl}}/profile/step/6
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "languages": [
+    {
+      "language": "Français",
+      "level": "native"
+    },
+    {
+      "language": "English",
+      "level": "C1",
+      "certificate": "https://example.com/certs/toefl.pdf"
+    },
+    {
+      "language": "Español",
+      "level": "B2"
+    }
+  ]
+}
+
+###
+### UPDATE STEP 7: Certifications
+PUT {{baseUrl}}/profile/step/7
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "certifications": [
+    {
+      "name": "AWS Solutions Architect Associate",
+      "organization": "Amazon Web Services",
+      "date": "2023-08-15",
+      "domain": "Cloud Computing",
+      "context": "Professional certification",
+      "url": "https://aws.amazon.com/certification"
+    },
+    {
+      "name": "Google Cloud Associate Cloud Engineer",
+      "organization": "Google Cloud",
+      "date": "2023-10-20",
+      "domain": "Cloud Computing"
+    },
+    {
+      "name": "Responsive Web Design",
+      "organization": "freeCodeCamp",
+      "date": "2022-03-15",
+      "domain": "Web Development",
+      "context": "Online certification"
+    }
+  ]
+}
+
+###
+### ERROR EXAMPLES
+###
+
+### Invalid age (under 16)
+PUT {{baseUrl}}/profile/step/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "Young",
+  "lastName": "Person",
+  "phone": "+33612345678",
+  "country": "France",
+  "city": "Paris",
+  "dateOfBirth": "2010-05-15",
+  "gender": "male"
+}
+
+###
+### Duplicate skills (should fail)
+PUT {{baseUrl}}/profile/step/3
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "skills": [
+    {
+      "name": "React",
+      "category": "tech",
+      "level": "advanced"
+    },
+    {
+      "name": "React",
+      "category": "tech",
+      "level": "beginner"
+    }
+  ]
+}
+
+###
+### Invalid date range (end before start)
+PUT {{baseUrl}}/profile/step/4
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "experiences": [
+    {
+      "title": "Developer",
+      "company": "Company",
+      "location": "Paris",
+      "startDate": "2023-12-31",
+      "endDate": "2023-01-01",
+      "description": "Invalid date range"
+    }
+  ]
+}
