@@ -10,6 +10,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
 import { PresenceModule } from './modules/presence/presence.module';
 import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
+import { AuthController } from './modules/auth/auth.controller';
 
 @Module({
   imports: [

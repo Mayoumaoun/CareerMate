@@ -10,7 +10,7 @@ import { PostEntity } from "src/modules/presence/post/post.entity";
 import { ProfileEntity } from "src/modules/profile/entities/profile.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
-enum Gender {
+export enum Gender {
     Female = "Female",
     Male = "Male",
     Other = "Other",
