@@ -18,8 +18,8 @@ export class ProjectEntity {
     techStack: string[];
     @Column({type: 'text'})
     projectUrl: string;
-    @Column({type: 'text'})
-    imageUrl: string;
+    @Column({type: 'text', nullable: true})
+    imageUrl: string | null;
     @CreateDateColumn()
     createdAt: Date;
     @UpdateDateColumn()
