@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty, IsArray, IsOptional, IsUrl, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsArray, IsOptional, IsUrl, IsDateString, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ProjectDto {
   @IsString()
@@ -28,11 +29,11 @@ export class ProjectDto {
   @IsDateString()
   @IsOptional()
   date?: string;
-
-  
 }
 
 export class Step5ProjectsDto {
   @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProjectDto)
   projects: ProjectDto[];
 }

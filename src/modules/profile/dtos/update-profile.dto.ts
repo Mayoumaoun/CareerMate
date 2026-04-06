@@ -7,7 +7,7 @@ import { Step4ExperiencesDto } from './step4-experiences.dto';
 import { Step5ProjectsDto } from './step5-projects.dto';
 import { Step6LanguagesDto } from './step6-languages.dto';
 import { Step7CertificationsDto } from './step7-certifications.dto';
-
+import { TargetProfileValidationDto } from './target-profile-validation.dto';
 export class UpdateProfileDto {
   @ValidateNested()
   @Type(() => Step1PersonalInfoDto)
@@ -59,4 +59,9 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   longTermGoals?: string;
+
+  @ValidateNested()
+  @Type(() => TargetProfileValidationDto)
+  @IsOptional()
+  targetProfile?: TargetProfileValidationDto;
 }

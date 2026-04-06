@@ -52,9 +52,12 @@ export class ProfileEntity {
     @JoinColumn()
     user: UserEntity;
 
+    @Column({ type: 'jsonb', nullable: true })
+    targetProfile: Record<string, any> | null;
+
     @OneToMany(() => CvEntity, (cv: CvEntity) => cv.profile)
     cvs: CvEntity[];
-
+    
     @OneToMany(() => ProjectEntity, (project: ProjectEntity) => project.profile)
     projects: ProjectEntity[];
 }

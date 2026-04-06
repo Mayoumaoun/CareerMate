@@ -1,5 +1,6 @@
 export * from './create-profile.dto';
 export * from './update-profile.dto';
+export * from './target-profile-validation.dto';
 export * from './step1-personal-info.dto';
 export * from './step2-education.dto';
 export * from './step3-skills.dto';

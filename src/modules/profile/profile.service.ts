@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ProfileEntity } from './entities/profile.entity';
 import { ProjectEntity } from './entities/projet.entity';
 import { CvEntity } from './entities/cv.entity';
+import { UserEntity } from '../user/entities/user.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import * as jsonSchemas from 'src/common/types/json-schemas';
@@ -15,84 +16,46 @@ export class ProfileService {
     private readonly profileRepository: Repository<ProfileEntity>,
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
  
-  async createCompleteProfile(
+  async createProfile(
     userId: string,
     profileData: CreateProfileDto,
   ): Promise<any> {
     try {
-      const skills = profileData.step3.skills.map(skill => ({
-        name: skill.name,
-        level: skill.level || 'intermediate',
-      })) as jsonSchemas.SkillItem[];
+      // Load user from database
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+      });
 
-      const education: any[] = profileData.step2.education.map(edu => ({
-        degree: edu.degree,
-        institution: edu.institution,
-        field: edu.field,
-        startDate: edu.startDate,
-        endDate: edu.endDate || edu.startDate,
-      })) as jsonSchemas.EducationItem[];
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
 
-      // experiences   
-      const experiences: any[] = profileData.step4.experiences.map(exp => ({
-        title: exp.title,
-        company: exp.company,
-        location: exp.location || '',
-        startDate: exp.startDate,
-        endDate: exp.endDate || exp.startDate,
-        description: exp.description,
-      })) as jsonSchemas.ExperienceItem[];
-
-      // languages array
-      const languages: jsonSchemas.LanguageItem[] = profileData.step6.languages;
-
-      // certifications array
-      const certifications: any[] = profileData.step7.certifications.map(cert => ({
-        name: cert.name,
-        date: cert.date,
-        context: cert.context || '',
-        domain: cert.domain || '',
-        organization: cert.organization,
-        url: cert.url,
-      })) as jsonSchemas.CertificationItem[];
-
-      // Create profile object
+      // Progressive approach: Create profile with ONLY step1
+      // Other steps will be added via PUT /profile/step/X
       const profileData_obj: any = {
         bio: profileData.bio || this.generateDefaultBio(profileData.step1),
-        userLevel: profileData.step2.userLevel,
-        skills,
-        experiences,
-        education,
-        languages,
-        certifications,
-        profilScore: this.calculateInitialProfileScore(profileData),
+        userLevel: 'Junior', // Default level (will be updated in step2)
+        skills: [],
+        experiences: [],
+        education: [],
+        languages: [],
+        certifications: [],
+        profilScore: 20, // Initial score for step1 completion
+        user, // Associate the user to the profile
+        targetProfile: profileData.targetProfile || null,
       };
 
       // Create and save profile
       const profile = this.profileRepository.create(profileData_obj);
       const savedProfile = await this.profileRepository.save(profile);
 
-      // Create projects associated with this profile
-      if (profileData.step5.projects && profileData.step5.projects.length > 0) {
-        const projects = profileData.step5.projects.map(projectData =>
-          this.projectRepository.create({
-            title: projectData.title,
-            context: projectData.context,
-            description: projectData.description,
-            techStack: projectData.techStack || [],
-            projectUrl: projectData.projectUrl || '',
-            date: projectData.date ? new Date(projectData.date) : new Date(),
-            profile: savedProfile,
-          } as any),
-        ) as any[];
-        await this.projectRepository.save(projects);
-      }
-
       return savedProfile;
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(
         `Failed to create profile: ${error.message}`,
       );
@@ -102,8 +65,8 @@ export class ProfileService {
 
   async getProfile(userId: string): Promise<any> {
     const profile = await this.profileRepository.findOne({
-      where: { id: userId },
-      relations: ['projects', 'cvs'],
+      where: { user: { id: userId } },
+      relations: ['projects', 'cvs', 'user'],
     } as any);
 
     if (!profile) {
@@ -173,6 +136,10 @@ export class ProfileService {
         }));
         profile.certifications = certifications;
         break;
+      case 8:
+        // Step 8: Target Profile (optional final step)
+        profile.targetProfile = stepData || null;
+        break;
       default:
         throw new BadRequestException(`Invalid step number: ${step}`);
     }
@@ -182,16 +149,45 @@ export class ProfileService {
   }
 
   
-  async updateProjects(userId: string, projects: any[]): Promise<void> {
+  async updateProjects(userId: string, newProjectsData: any[]): Promise<void> {
     const profile = await this.getProfile(userId);
+    console.log('📍 updateProjects - Profile ID:', profile.id);
 
-    // Delete existing projects
-    await this.projectRepository.delete({ profile: { id: profile.id } } as any);
+    // Get existing projects for this profile
+    const existingProjects = await this.projectRepository.find({
+      where: { profile: { id: profile.id } },
+    });
+    console.log('📋 Found', existingProjects.length, 'existing projects');
 
-    // Create new projects
-    if (projects && projects.length > 0) {
-      const newProjects = projects.map(projectData =>
-        this.projectRepository.create({
+    if (!newProjectsData || newProjectsData.length === 0) {
+      // Delete all if no projects provided
+      if (existingProjects.length > 0) {
+        await this.projectRepository.remove(existingProjects);
+        console.log('🗑️ Deleted all projects');
+      }
+      return;
+    }
+
+    // Update existing projects or create new ones
+    for (let i = 0; i < newProjectsData.length; i++) {
+      const projectData = newProjectsData[i];
+      
+      if (i < existingProjects.length) {
+        // Update existing project
+        const existingProject = existingProjects[i];
+        existingProject.title = projectData.title;
+        existingProject.context = projectData.context;
+        existingProject.description = projectData.description;
+        existingProject.techStack = projectData.techStack || [];
+        existingProject.projectUrl = projectData.projectUrl || '';
+        existingProject.imageUrl = projectData.imageUrl || '';
+        existingProject.date = projectData.date ? new Date(projectData.date) : new Date();
+        
+        await this.projectRepository.save(existingProject);
+        console.log('✏️ Updated project:', projectData.title);
+      } else {
+        // Create new project
+        const newProject = this.projectRepository.create({
           title: projectData.title,
           context: projectData.context,
           description: projectData.description,
@@ -199,18 +195,29 @@ export class ProfileService {
           projectUrl: projectData.projectUrl || '',
           imageUrl: projectData.imageUrl || '',
           date: projectData.date ? new Date(projectData.date) : new Date(),
-          profile,
-        } as any),
-      );
-      await this.projectRepository.save(newProjects as any);
+          profile: profile
+        });
+        
+        await this.projectRepository.save(newProject);
+        console.log('✨ Created new project:', projectData.title);
+      }
     }
+
+    // Delete extra projects if fewer were provided
+    if (newProjectsData.length < existingProjects.length) {
+      const projectsToDelete = existingProjects.slice(newProjectsData.length);
+      await this.projectRepository.remove(projectsToDelete);
+      console.log('🗑️ Deleted', projectsToDelete.length, 'extra projects');
+    }
+
+    console.log('✅ All projects updated successfully');
   }
 
   
   async getProfileSummary(userId: string): Promise<any> {
     const profile = await this.profileRepository.findOne({
-      where: { id: userId },
-      relations: ['projects'],
+      where: { user: { id: userId } },
+      relations: ['projects', 'user'],
     });
 
     if (!profile) {
@@ -328,27 +335,12 @@ export class ProfileService {
       const updatedProfile = await this.profileRepository.save(profile);
 
       // Update projects if provided
-      if (profileData.step5 && profileData.step5.projects && profileData.step5.projects.length > 0) {
-        // Delete existing projects
-        await this.projectRepository.delete({ profile: { id: userId } });
-
-        // Create and save new projects
-        const projects = profileData.step5.projects.map(projectData =>
-          this.projectRepository.create({
-            title: projectData.title,
-            context: projectData.context,
-            description: projectData.description,
-            techStack: projectData.techStack || [],
-            projectUrl: projectData.projectUrl || '',
-            date: projectData.date ? new Date(projectData.date) : new Date(),
-            profile: updatedProfile,
-          } as any),
-        ) as any[];
-        await this.projectRepository.save(projects);
+      if (profileData.step5 && profileData.step5.projects) {
+        await this.updateProjects(userId, profileData.step5.projects);
       }
 
       return updatedProfile;
-    } catch (error) {
+    } catch (error: any) {
       throw new BadRequestException(
         `Failed to update profile: ${error.message}`,
       );
@@ -358,43 +350,6 @@ export class ProfileService {
   // Helpers
   private generateDefaultBio(personalInfo: any): string {
     return `${'Hi! I\'m'} ${personalInfo.firstName} ${personalInfo.lastName}${'.'} ${'I\'m currently based in'} ${personalInfo.city}, ${personalInfo.country}`;
-  }
-
-  private calculateInitialProfileScore(profileData: CreateProfileDto): number {
-    let score = 0;
-
-    // Personal info (20 points max)
-    if (profileData.step1) score += 20;
-
-    // Education (15 points max)
-    if (profileData.step2?.education?.length > 0) score += 15;
-
-    // Skills (20 points max)
-    if (profileData.step3?.skills?.length > 0) {
-      score += Math.min(20, profileData.step3.skills.length * 2);
-    }
-
-    // Experiences (20 points max)
-    if (profileData.step4?.experiences?.length > 0) {
-      score += Math.min(20, profileData.step4.experiences.length * 5);
-    }
-
-    // Projects (15 points max)
-    if (profileData.step5?.projects?.length > 0) {
-      score += Math.min(15, profileData.step5.projects.length * 3);
-    }
-
-    // Languages (5 points max)
-    if (profileData.step6?.languages?.length > 0) {
-      score += Math.min(5, profileData.step6.languages.length);
-    }
-
-    // Certifications (5 points max)
-    if (profileData.step7?.certifications?.length > 0) {
-      score += Math.min(5, profileData.step7.certifications.length);
-    }
-
-    return Math.min(score, 100); // Cap at 100
   }
 
   private async calculateProfileScore(profile: ProfileEntity): Promise<number> {

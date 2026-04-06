@@ -1,0 +1,366 @@
+### Authentication & Profile Testing Examples
+### Use REST Client extension in VS Code to execute these requests
+
+@baseUrl = http://localhost:3000/api
+@token = replace_with_jwt_token_here
+
+###
+### AUTHENTICATION - SIGNUP
+###
+### Create a new user account
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "email": "ahmed@example.com",
+  "password": "Password123",
+  "firstName": "Ahmed",
+  "lastName": "Ben Mohamed",
+  "phone": "+21625123456",
+  "country": "Tunisia",
+  "city": "Tunis",
+  "birthdate": "1998-05-15",
+  "gender": "male"
+}
+
+###
+### AUTHENTICATION - SIGNIN
+###
+### Login with existing credentials
+POST {{baseUrl}}/auth/signin
+Content-Type: application/json
+
+{
+  "email": "ahmed@example.com",
+  "password": "Password123"
+}
+
+###
+### PROFILE - CREATE COMPLETE PROFILE
+###
+### Create full profile in one request (requires signup first)
+POST {{baseUrl}}/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "step1": {
+    "firstName": "Ahmed",
+    "lastName": "Ben Mohamed",
+    "phone": "+21625123456",
+    "country": "Tunisia",
+    "city": "Tunis",
+    "dateOfBirth": "1998-05-15",
+    "gender": "male",
+    "email": "ahmed@example.com",
+    "address": "123 Avenue de la Liberté",
+    "zipCode": "1001"
+  },
+  "step2": {
+    "userLevel": "Junior",
+    "education": [
+      {
+        "degree": "Licence Informatique",
+        "institution": "Université de Tunis",
+        "field": "Computer Science",
+        "startDate": "2020-09-01",
+        "endDate": "2023-06-30"
+      }
+    ]
+  },
+  "step3": {
+    "skills": [
+      {
+        "name": "React",
+        "category": "tech",
+        "level": "intermediate"
+      },
+      {
+        "name": "Node.js",
+        "category": "tech",
+        "level": "intermediate"
+      },
+      {
+        "name": "TypeScript",
+        "category": "tech",
+        "level": "intermediate"
+      },
+      {
+        "name": "Communication",
+        "category": "soft",
+        "level": "advanced"
+      }
+    ]
+  },
+  "step4": {
+    "experiences": [
+      {
+        "title": "Full Stack Developer",
+        "company": "TechCorp Tunisia",
+        "location": "Tunis",
+        "startDate": "2023-01-15",
+        "endDate": "2024-01-15",
+        "description": "Built and maintained web applications using React and Node.js"
+      }
+    ]
+  },
+  "step5": {
+    "projects": [
+      {
+        "title": "E-Commerce Platform",
+        "context": "personal",
+        "description": "Full-stack e-commerce platform with payment integration",
+        "projectUrl": "https://ecommerce.example.com",
+        "techStack": ["React", "Node.js", "PostgreSQL"],
+        "date": "2023-06-01"
+      }
+    ]
+  },
+  "step6": {
+    "languages": [
+      {
+        "language": "English",
+        "level": "C1"
+      },
+      {
+        "language": "Arabic",
+        "level": "native"
+      },
+      {
+        "language": "French",
+        "level": "B2"
+      }
+    ]
+  },
+  "step7": {
+    "certifications": [
+      {
+        "name": "AWS Solutions Architect Associate",
+        "organization": "Amazon",
+        "date": "2023-08-01",
+        "domain": "Cloud Computing",
+        "context": "Professional certification",
+        "url": "https://aws.amazon.com"
+      }
+    ]
+  }
+}
+
+###
+### PROFILE - GET USER PROFILE
+###
+### Retrieve user profile by ID
+GET {{baseUrl}}/profile/1
+Authorization: Bearer {{token}}
+
+###
+### PROFILE - GET PROFILE SUMMARY
+###
+### Get profile completion percentage and summary
+GET {{baseUrl}}/profile/1/summary
+Authorization: Bearer {{token}}
+
+###
+### PROFILE - UPDATE COMPLETE PROFILE
+###
+### Update entire profile at once
+PUT {{baseUrl}}/profile/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "step1": {
+    "firstName": "Ahmed",
+    "lastName": "Ben Mohamed",
+    "phone": "+21625987654",
+    "country": "Tunisia",
+    "city": "Sfax",
+    "dateOfBirth": "1998-05-15",
+    "gender": "male",
+    "email": "ahmed.updated@example.com",
+    "address": "456 Rue de la République",
+    "zipCode": "3000"
+  },
+  "step2": {
+    "userLevel": "Senior",
+    "education": [
+      {
+        "degree": "Master Informatique",
+        "institution": "Université Sousse",
+        "field": "Advanced Computer Science",
+        "startDate": "2023-09-01"
+      }
+    ]
+  },
+  "step3": {
+    "skills": [
+      {
+        "name": "React",
+        "category": "tech",
+        "level": "advanced"
+      },
+      {
+        "name": "NestJS",
+        "category": "tech",
+        "level": "advanced"
+      }
+    ]
+  },
+  "bio": "Passionate developer from Tunisia"
+}
+
+###
+### PROFILE - UPDATE STEP 1 (Personal Info)
+###
+PUT {{baseUrl}}/profile/step/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "Ahmed",
+  "lastName": "Ben Mohamed",
+  "phone": "+21625123456",
+  "country": "Tunisia",
+  "city": "Tunis",
+  "dateOfBirth": "1998-05-15",
+  "gender": "male",
+  "email": "ahmed@example.com",
+  "address": "123 Avenue de la Liberté",
+  "zipCode": "1001"
+}
+
+###
+### PROFILE - UPDATE STEP 2 (Education & Level)
+###
+PUT {{baseUrl}}/profile/step/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userLevel": "Junior",
+  "education": [
+    {
+      "degree": "Licence Informatique",
+      "institution": "Université de Tunis",
+      "field": "Computer Science",
+      "startDate": "2020-09-01",
+      "endDate": "2023-06-30"
+    }
+  ]
+}
+
+###
+### PROFILE - UPDATE STEP 3 (Skills)
+###
+PUT {{baseUrl}}/profile/step/3
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "skills": [
+    {
+      "name": "React",
+      "category": "tech",
+      "level": "advanced"
+    },
+    {
+      "name": "NestJS",
+      "category": "tech",
+      "level": "advanced"
+    },
+    {
+      "name": "TypeScript",
+      "category": "tech",
+      "level": "advanced"
+    },
+    {
+      "name": "Leadership",
+      "category": "soft",
+      "level": "advanced"
+    }
+  ]
+}
+
+###
+### PROFILE - UPDATE STEP 4 (Experiences)
+###
+PUT {{baseUrl}}/profile/step/4
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "experiences": [
+    {
+      "title": "Senior Full Stack Developer",
+      "company": "TechCorp Tunisia",
+      "location": "Tunis",
+      "startDate": "2023-01-15",
+      "endDate": "2024-06-30",
+      "description": "Led development team and implemented scalable architectures"
+    }
+  ]
+}
+
+###
+### PROFILE - UPDATE STEP 5 (Projects)
+###
+PUT {{baseUrl}}/profile/step/5
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "projects": [
+    {
+      "title": "E-Commerce Platform",
+      "context": "personal",
+      "description": "Full-stack e-commerce with real-time features",
+      "projectUrl": "https://ecommerce.example.com",
+      "techStack": ["React", "NestJS", "PostgreSQL", "Stripe"],
+      "date": "2023-06-01"
+    }
+  ]
+}
+
+###
+### PROFILE - UPDATE STEP 6 (Languages)
+###
+PUT {{baseUrl}}/profile/step/6
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "languages": [
+    {
+      "language": "English",
+      "level": "C1"
+    },
+    {
+      "language": "Arabic",
+      "level": "native"
+    },
+    {
+      "language": "French",
+      "level": "B2"
+    }
+  ]
+}
+
+###
+### PROFILE - UPDATE STEP 7 (Certifications)
+###
+PUT {{baseUrl}}/profile/step/7
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "certifications": [
+    {
+      "name": "AWS Solutions Architect",
+      "organization": "Amazon",
+      "date": "2023-08-01",
+      "domain": "Cloud Computing",
+      "context": "Professional",
+      "url": "https://aws.amazon.com/certificates"
+    }
+  ]
+}

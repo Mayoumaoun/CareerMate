@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { ExceptionFilter, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { UserEntity } from "./entities/user.entity";
 import { Repository } from "typeorm";
@@ -17,7 +17,7 @@ export class UserService {
             const passwordHash= await bcrypt.hash(password,salt);
             const user = this.userRepo.create({ ...rest, passwordHash });
             return await this.userRepo.save(user);
-        }catch(e){
+        }catch(e : any){
             console.error('Create user error:', e.message); 
             throw new InternalServerErrorException('Failed to create user');
         }

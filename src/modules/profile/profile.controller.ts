@@ -11,7 +11,9 @@ import {
   HttpStatus,
   BadRequestException,
   ValidationPipe,
+  Req,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProfileService } from './profile.service';
 import { ProfileEntity } from './entities/profile.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
@@ -26,49 +28,52 @@ import { Step7CertificationsDto } from './dtos/step7-certifications.dto';
 import { ValidateDatesPipe } from './pipes/validate-dates.pipe';
 import { ValidateSkillsPipe } from './pipes/validate-skills.pipe';
 import { ValidateAgeMinimumPipe } from './pipes/validate-age-minimum.pipe';
+import { ValidateTargetProfilePipe } from './pipes/validate-target-profile.pipe';
+import { TargetProfileValidationDto } from './dtos/target-profile-validation.dto';
 
 @Controller('profile')
-@UsePipes(new ValidationPipe({ whitelist: true }))
+@UsePipes(new ValidationPipe({ whitelist: true }), new ValidateTargetProfilePipe())
+@UseGuards(JwtAuthGuard)
 export class ProfileController {
   constructor(private readonly profileService: ProfileService) {}
 
-  /**
-   * Create complete profile in one go (all steps at once)
-   * POST /profile
-   */
+
   @Post()
-  async createCompleteProfile(
+  async createProfile(
+    @Req() request: any,
     @Body()
     createProfileDto: CreateProfileDto,
   ): Promise<ProfileEntity> {
-    return await this.profileService.createCompleteProfile(
-      '1',
+    const userId = request.user.userId;
+    return await this.profileService.createProfile(
+      userId,
       createProfileDto,
     );
   }
 
 
-  @Get(':userId')
-  async getProfile(@Param('userId') userId: string): Promise<ProfileEntity> {
+  @Get()
+  async getProfile(@Req() request: any): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.getProfile(userId);
   }
 
 
-  @Get(':userId/summary')
-  async getProfileSummary(@Param('userId') userId: string): Promise<{ profileScore: number; completionPercentage: number; summary: any }> {
+  @Get('summary')
+  async getProfileSummary(@Req() request: any): Promise<{ profileScore: number; completionPercentage: number; summary: any }> {
+    const userId = request.user.userId;
     return await this.profileService.getProfileSummary(userId);
   }
 
-  /**
-   * Update complete profile at once (all steps together)
-   * PUT /profile/:userId
-   */
-  @Put(':userId')
+  
+ 
+  @Put()
   async updateCompleteProfile(
-    @Param('userId') userId: string,
+    @Req() request: any,
     @Body()
     updateProfileDto: UpdateProfileDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateCompleteProfile(
       userId,
       updateProfileDto,
@@ -77,11 +82,13 @@ export class ProfileController {
   
   @Put('step/1')
   async updateStep1(
+    @Req() request: any,
     @Body(ValidateAgeMinimumPipe)
     step1Data: Step1PersonalInfoDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateProfileStep(
-      '1',
+      userId,
       1,
       step1Data,
     );
@@ -89,11 +96,13 @@ export class ProfileController {
 
   @Put('step/2')
   async updateStep2(
+    @Req() request: any,
     @Body(ValidateDatesPipe)
     step2Data: Step2EducationDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateProfileStep(
-      '1',
+      userId,
       2,
       step2Data,
     );
@@ -102,11 +111,13 @@ export class ProfileController {
   
   @Put('step/3')
   async updateStep3(
+    @Req() request: any,
     @Body(ValidateSkillsPipe)
     step3Data: Step3SkillsDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateProfileStep(
-      '1',
+      userId,
       3,
       step3Data,
     );
@@ -115,11 +126,13 @@ export class ProfileController {
 
   @Put('step/4')
   async updateStep4(
+    @Req() request: any,
     @Body(ValidateDatesPipe)
     step4Data: Step4ExperiencesDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateProfileStep(
-      '1',
+      userId,
       4,
       step4Data,
     );
@@ -127,11 +140,13 @@ export class ProfileController {
 
   @Put('step/5')
   async updateStep5(
+    @Req() request: any,
     @Body()
     step5Data: Step5ProjectsDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateProfileStep(
-      '1',
+      userId,
       5,
       step5Data,
     );
@@ -139,11 +154,13 @@ export class ProfileController {
 
   @Put('step/6')
   async updateStep6(
+    @Req() request: any,
     @Body()
     step6Data: Step6LanguagesDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateProfileStep(
-      '1',
+      userId,
       6,
       step6Data,
     );
@@ -152,13 +169,29 @@ export class ProfileController {
  
   @Put('step/7')
   async updateStep7(
+    @Req() request: any,
     @Body()
     step7Data: Step7CertificationsDto,
   ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
     return await this.profileService.updateProfileStep(
-      '1',
+      userId,
       7,
       step7Data,
+    );
+  }
+
+  @Put('step/8')
+  async updateStep8(
+    @Req() request: any,
+    @Body()
+    step8Data: TargetProfileValidationDto,
+  ): Promise<ProfileEntity> {
+    const userId = request.user.userId;
+    return await this.profileService.updateProfileStep(
+      userId,
+      8,
+      step8Data,
     );
   }
 }

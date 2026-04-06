@@ -25,8 +25,8 @@ export class DiplomaDto {
   startDate: string; // ISO 8601 format
 
   @IsString()
-  @IsNotEmpty()
-  endDate: string;
+  @IsOptional()
+  endDate?: string; // Optionnel - défaut = startDate
  
 }
 
