@@ -27,7 +27,7 @@ export class ProjectEntity {
     @DeleteDateColumn({nullable: true})
     deletedAt: Date | null;
 
-    @ManyToOne(() => ProfileEntity, (profile: ProfileEntity) => profile.projects)
-    @JoinColumn()
+    @ManyToOne(() => ProfileEntity, (profile: ProfileEntity) => profile.projects, { nullable: false })
+    @JoinColumn({ name: 'profileId' })
     profile: ProfileEntity;
 }

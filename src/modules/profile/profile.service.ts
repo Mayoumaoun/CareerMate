@@ -48,6 +48,13 @@ export class ProfileService {
         profilScore: 20, // Initial score for step1 completion
         user, // Associate the user to the profile
         targetProfile: profileData.targetProfile || null,
+        firstName: profileData.step1.firstName,
+        lastName: profileData.step1.lastName,
+        phone: profileData.step1.phone,
+        country: profileData.step1.country,
+        city: profileData.step1.city,
+        birthdate: profileData.step1.dateOfBirth,
+        gender: profileData.step1.gender,
       };
 
       // Create and save profile
@@ -86,6 +93,7 @@ export class ProfileService {
 
     switch (step) {
       case 1:
+        //remarque: add other field to be updated
         profile.bio = stepData.bio || this.generateDefaultBio(stepData);
         break;
       case 2:
@@ -121,7 +129,7 @@ export class ProfileService {
       case 5:
         // Projects are handled separately
         await this.updateProjects(userId, stepData.projects);
-        break;
+        return this.getProfile(userId);
       case 6:
         profile.languages = stepData.languages;
         break;
@@ -149,68 +157,57 @@ export class ProfileService {
   }
 
   
+  
   async updateProjects(userId: string, newProjectsData: any[]): Promise<void> {
     const profile = await this.getProfile(userId);
-    console.log('📍 updateProjects - Profile ID:', profile.id);
-
-    // Get existing projects for this profile
-    const existingProjects = await this.projectRepository.find({
-      where: { profile: { id: profile.id } },
-    });
-    console.log('📋 Found', existingProjects.length, 'existing projects');
-
-    if (!newProjectsData || newProjectsData.length === 0) {
-      // Delete all if no projects provided
-      if (existingProjects.length > 0) {
-        await this.projectRepository.remove(existingProjects);
-        console.log('🗑️ Deleted all projects');
-      }
-      return;
-    }
-
-    // Update existing projects or create new ones
+    const existingProjects = await this.projectRepository.find({where: { profile: { id: profile.id } },});
     for (let i = 0; i < newProjectsData.length; i++) {
       const projectData = newProjectsData[i];
-      
-      if (i < existingProjects.length) {
-        // Update existing project
-        const existingProject = existingProjects[i];
-        existingProject.title = projectData.title;
-        existingProject.context = projectData.context;
-        existingProject.description = projectData.description;
-        existingProject.techStack = projectData.techStack || [];
-        existingProject.projectUrl = projectData.projectUrl || '';
-        existingProject.imageUrl = projectData.imageUrl || '';
-        existingProject.date = projectData.date ? new Date(projectData.date) : new Date();
-        
-        await this.projectRepository.save(existingProject);
-        console.log('✏️ Updated project:', projectData.title);
-      } else {
-        // Create new project
+      const project= await this.projectRepository.findOne({
+        where: { id: newProjectsData[i].projectId, profile: { id: profile.id } },
+      });
+      if(project){
+        await this.projectRepository
+                  .createQueryBuilder()
+                  .update(ProjectEntity)
+                  .set({
+                    title: projectData.title,
+                    context: projectData.context,
+                    description: projectData.description,
+                    techStack: projectData.techStack || [],
+                    projectUrl: projectData.projectUrl || '',
+                    imageUrl: projectData.imageUrl || '',
+                    date: projectData.date ? new Date(projectData.date) : project.date,
+                  })
+                  .where('id = :id', { id: project.id })
+                  .execute();
+      }
+      else{
         const newProject = this.projectRepository.create({
-          title: projectData.title,
+          title: projectData.title,        
           context: projectData.context,
           description: projectData.description,
           techStack: projectData.techStack || [],
           projectUrl: projectData.projectUrl || '',
           imageUrl: projectData.imageUrl || '',
           date: projectData.date ? new Date(projectData.date) : new Date(),
-          profile: profile
+          profile: { id: profile.id },
         });
         
-        await this.projectRepository.save(newProject);
-        console.log('✨ Created new project:', projectData.title);
+        const saved = await this.projectRepository.save(newProject);
+        await this.projectRepository
+                    .createQueryBuilder()
+                    .relation(ProjectEntity, 'profile')
+                    .of(saved.id)
+                    .set(profile.id);
       }
     }
-
-    // Delete extra projects if fewer were provided
-    if (newProjectsData.length < existingProjects.length) {
-      const projectsToDelete = existingProjects.slice(newProjectsData.length);
-      await this.projectRepository.remove(projectsToDelete);
-      console.log('🗑️ Deleted', projectsToDelete.length, 'extra projects');
-    }
-
-    console.log('✅ All projects updated successfully');
+      const incomingIds = newProjectsData.map(p => p.projectId).filter(Boolean);
+      const toDelete = existingProjects.filter(p => !incomingIds.includes(p.id));
+      if (toDelete.length > 0) {
+        await this.projectRepository.remove(toDelete);
+      }
+    
   }
 
   

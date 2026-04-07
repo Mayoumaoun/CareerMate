@@ -3,6 +3,7 @@ import { UserEntity } from "src/modules/user/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { CvEntity } from "./cv.entity";
 import { ProjectEntity } from "./projet.entity";
+import { Gender } from "src/modules/user/enums/gender.enum";
 
 enum UserLevel {
     Senior = "Senior",
@@ -25,6 +26,20 @@ export class ProfileEntity {
     updatedAt: Date;
     @DeleteDateColumn({nullable: true})
     deletedAt: Date | null;
+    @Column()
+    firstName: string;
+    @Column()
+    lastName: string;
+    @Column()
+    phone: string;
+    @Column()
+    country: string;
+    @Column()
+    city: string;
+    @Column({type: 'date'})
+    birthdate: Date;
+    @Column({type: 'enum', enum: Gender})
+    gender: Gender;
 
     @Column({ type: 'jsonb' })
     skills: jsonSchemas.SkillItem[];

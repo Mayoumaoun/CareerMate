@@ -1,6 +1,4 @@
-import { IsDate, IsEmail, IsEnum, IsOptional, IsPhoneNumber, IsString, IsStrongPassword } from "class-validator";
-import { Gender } from "../entities/user.entity";
-import { Type } from "class-transformer";
+import { IsEmail, IsString, IsStrongPassword } from "class-validator";
 
 export class CreateUserDto{
     @IsEmail()
@@ -11,28 +9,6 @@ export class CreateUserDto{
     password: string;
 
     @IsString()
-    firstName: string;
+    username: string;
 
-    @IsString()
-    lastName: string;
-
-    @IsPhoneNumber()
-    // @IsOptional()
-    phone: string;
-
-    @IsString()
-    // @IsOptional()
-    country: string;
-
-    @IsString()
-    // @IsOptional()
-    city: string;
-
-    @IsDate()
-    // @IsOptional()
-    @Type(() => Date)
-    birthdate: Date;
-
-    @IsEnum(Gender)
-    gender: Gender;
 }
