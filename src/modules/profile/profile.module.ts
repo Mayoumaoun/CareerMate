@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuthModule } from "../auth/auth.module";
-import { CvEntity } from "./entities/cv.entity";
+import { CvEntity } from "../cv/cv.entity";
 import { ProfileEntity } from "./entities/profile.entity";
 import { ProjectEntity } from "./entities/projet.entity";
 import { UserEntity } from "../user/entities/user.entity";
@@ -10,9 +10,10 @@ import { ProfileController } from "./profile.controller";
 import { ValidateAgeMinimumPipe } from "./pipes/validate-age-minimum.pipe";
 import { ValidateDatesPipe } from "./pipes/validate-dates.pipe";
 import { ValidateSkillsPipe } from "./pipes/validate-skills.pipe";
+import { CvModule } from "../cv/cv.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity]), AuthModule],
+    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity]), AuthModule,CvModule],
     providers: [ProfileService, ValidateAgeMinimumPipe, ValidateDatesPipe, ValidateSkillsPipe],
     controllers: [ProfileController],
     exports: [ProfileService]

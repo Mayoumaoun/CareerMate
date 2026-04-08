@@ -11,6 +11,7 @@ import { PresenceModule } from './modules/presence/presence.module';
 import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { AuthController } from './modules/auth/auth.controller';
+import { CvModule } from './modules/cv/cv.module';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { AuthController } from './modules/auth/auth.controller';
         synchronize: process.env.NODE_ENV === 'development',
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule
+    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule,CvModule
   ],
   controllers: [AppController],
   providers: [AppService],

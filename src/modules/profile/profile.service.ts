@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProfileEntity } from './entities/profile.entity';
 import { ProjectEntity } from './entities/projet.entity';
-import { CvEntity } from './entities/cv.entity';
+import { CvEntity } from '../cv/cv.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
