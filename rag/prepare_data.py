@@ -10,6 +10,8 @@ from datetime import datetime
 from dotenv import load_dotenv
 import os
 import pickle
+
+# DB connection
 os.environ['HF_HUB_DISABLE_SYMLINKS_WARNING'] = '1'
 
 load_dotenv()
