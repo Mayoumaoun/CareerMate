@@ -1,7 +1,11 @@
 import { UserEntity } from "src/modules/user/entities/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-enum RoadmapStatus{}
+enum RoadmapStatus{
+    DRAFT = 'DRAFT',
+    ACTIVE = 'ACTIVE',
+    COMPLETE = 'COMPLETE',
+}
 @Entity("roadmap")
 export class RoadmapEntity {
     @PrimaryGeneratedColumn('uuid')

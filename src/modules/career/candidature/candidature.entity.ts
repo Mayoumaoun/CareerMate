@@ -4,7 +4,13 @@ import { JobOfferEntity } from "../job-offer/job-offer.entity";
 import { LettreMotivationEntity } from "../lettre-motivation/lettre-motivation.entity";
 import { UserEntity } from "src/modules/user/entities/user.entity";
 
-enum CandidatureStatus {}
+enum CandidatureStatus {
+    DRAFT = 'DRAFT',
+    SENT = 'SENT',
+    INTERVIEW = 'INTERVIEW',
+    REJECTED = 'REJECTED',
+    ACCEPTED = 'ACCEPTED',
+}
 
 @Entity("candidature")
 export class CandidatureEntity {

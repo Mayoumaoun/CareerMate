@@ -1,7 +1,13 @@
 import { UserEntity } from "src/modules/user/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
-enum OpportunityType{}
+enum OpportunityType{
+    HACKATHON = 'HACKATHON',
+    BOURSE = 'BOURSE',
+    CONCOURS = 'CONCOURS',
+    CONFERENCE = 'CONFERENCE',
+    ACCELERATION = 'ACCELERATION',
+}
 
 @Entity("opportunity")
 export class OpportunityEntity {

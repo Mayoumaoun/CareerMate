@@ -1,7 +1,11 @@
 import { ChildEntity, Column } from "typeorm";
 import { Simulation, SimulationType } from "./simulation.entity";
 
-enum PitchMode{}
+enum PitchMode{
+  CLASSIQUE = 'CLASSIQUE',
+  STORYTELLING = 'STORYTELLING',
+  CONVAINCANT = 'CONVAINCANT',
+}
 @ChildEntity(SimulationType.PITCH)
 export class PitchEntity extends Simulation {
   @Column({ type: 'enum', enum: PitchMode })

@@ -43,6 +43,10 @@ export class ProfileEntity {
 
     @Column({ type: 'jsonb' })
     certifications: jsonSchemas.CertificationItem[];
+
+    @Column({ type: 'jsonb', nullable: true })
+    profileVector: number[] | null;
+
     @Column({type: 'text'})
     shortTermGoals: string;
     @Column({type: 'text'})
