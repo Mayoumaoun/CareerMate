@@ -159,32 +159,30 @@ export class ProfileService {
   
   
   async updateProjects(userId: string, newProjectsData: any[]): Promise<void> {
-    const profile = await this.getProfile(userId);
-    const existingProjects = await this.projectRepository.find({where: { profile: { id: profile.id } },});
-    for (let i = 0; i < newProjectsData.length; i++) {
-      const projectData = newProjectsData[i];
-      const project= await this.projectRepository.findOne({
-        where: { id: newProjectsData[i].projectId, profile: { id: profile.id } },
+  const profile = await this.getProfile(userId);
+  const existingProjects = await this.projectRepository.find({
+    where: { profile: { id: profile.id } },
+  });
+
+  for (const projectData of newProjectsData) {
+    const existing = projectData.projectId
+      ? existingProjects.find(p => p.id === projectData.projectId)
+      : null;
+
+    if (existing) {
+      await this.projectRepository.update(existing.id, {
+        title: projectData.title,
+        context: projectData.context,
+        description: projectData.description,
+        techStack: projectData.techStack || [],
+        projectUrl: projectData.projectUrl || '',
+        imageUrl: projectData.imageUrl || '',
+        date: projectData.date ? new Date(projectData.date) : existing.date,
       });
-      if(project){
-        await this.projectRepository
-                  .createQueryBuilder()
-                  .update(ProjectEntity)
-                  .set({
-                    title: projectData.title,
-                    context: projectData.context,
-                    description: projectData.description,
-                    techStack: projectData.techStack || [],
-                    projectUrl: projectData.projectUrl || '',
-                    imageUrl: projectData.imageUrl || '',
-                    date: projectData.date ? new Date(projectData.date) : project.date,
-                  })
-                  .where('id = :id', { id: project.id })
-                  .execute();
-      }
-      else{
-        const newProject = this.projectRepository.create({
-          title: projectData.title,        
+    } else {
+      await this.projectRepository.save(
+        this.projectRepository.create({
+          title: projectData.title,
           context: projectData.context,
           description: projectData.description,
           techStack: projectData.techStack || [],
@@ -192,24 +190,17 @@ export class ProfileService {
           imageUrl: projectData.imageUrl || '',
           date: projectData.date ? new Date(projectData.date) : new Date(),
           profile: { id: profile.id },
-        });
-        
-        const saved = await this.projectRepository.save(newProject);
-        await this.projectRepository
-                    .createQueryBuilder()
-                    .relation(ProjectEntity, 'profile')
-                    .of(saved.id)
-                    .set(profile.id);
-      }
+        }),
+      );
     }
-      const incomingIds = newProjectsData.map(p => p.projectId).filter(Boolean);
-      const toDelete = existingProjects.filter(p => !incomingIds.includes(p.id));
-      if (toDelete.length > 0) {
-        await this.projectRepository.remove(toDelete);
-      }
-    
   }
 
+  const incomingIds = newProjectsData.map(p => p.projectId).filter(Boolean);
+  const toDelete = existingProjects.filter(p => !incomingIds.includes(p.id));
+  if (toDelete.length > 0) {
+    await this.projectRepository.remove(toDelete);
+  }
+}
   
   async getProfileSummary(userId: string): Promise<any> {
     const profile = await this.profileRepository.findOne({
