@@ -10,7 +10,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
 import { PresenceModule } from './modules/presence/presence.module';
 import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
-import { AuthController } from './modules/auth/auth.controller';
+import { RedisModule } from './common/redis/redis.module';
 
 @Module({
   imports: [
@@ -32,7 +32,7 @@ import { AuthController } from './modules/auth/auth.controller';
         synchronize: process.env.NODE_ENV === 'development',
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule
+    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule
   ],
   controllers: [AppController],
   providers: [AppService],
