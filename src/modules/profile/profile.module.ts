@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuthModule } from "../auth/auth.module";
-import { CvEntity } from "./entities/cv.entity";
+import { CvEntity } from "../cv/cv.entity";
 import { ProfileEntity } from "./entities/profile.entity";
 import { ProjectEntity } from "./entities/projet.entity";
 import { UserEntity } from "../user/entities/user.entity";

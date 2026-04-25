@@ -1,4 +1,4 @@
-import { CvEntity } from "src/modules/profile/entities/cv.entity";
+import { CvEntity } from "src/modules/cv/cv.entity";
 import { Column, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { JobOfferEntity } from "../job-offer/job-offer.entity";
 import { LettreMotivationEntity } from "../lettre-motivation/lettre-motivation.entity";

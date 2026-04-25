@@ -1,5 +1,5 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { ProfileEntity } from "./profile.entity";
+import { ProfileEntity } from "../profile/entities/profile.entity";
 
 @Entity("cv")
 export class CvEntity {

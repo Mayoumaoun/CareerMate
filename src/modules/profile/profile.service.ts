@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProfileEntity } from './entities/profile.entity';
 import { ProjectEntity } from './entities/projet.entity';
-import { CvEntity } from './entities/cv.entity';
+import { CvEntity } from '../cv/cv.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
@@ -21,7 +21,7 @@ export class ProfileService {
     private readonly userRepository: Repository<UserEntity>, private readonly redis: RedisService
   ) {}
 
- 
+  private readonly  PROFILE_TTL = 24 * 3600; 
   async createProfile(
     userId: string,
     profileData: CreateProfileDto,
@@ -61,7 +61,7 @@ export class ProfileService {
       // Create and save profile
       const profile = this.profileRepository.create(profileData_obj);
       const savedProfile = await this.profileRepository.save(profile);
-      await this.redis.set(`user:${userId}:profile`,savedProfile,24 * 3600 * 1000 );
+      await this.redis.set(`user:${userId}:profile`,savedProfile,this.PROFILE_TTL );
 
       return savedProfile;
     } catch (error: any) {
@@ -78,7 +78,7 @@ export class ProfileService {
       where: { user: { id: userId } },
       relations: ['projects', 'cvs', 'user'],
     } as any))
-    const profile= await this.redis.getOrSet<ProfileEntity>(`user:${userId}:profile`,getProfile,24 * 3600 * 1000 );
+    const profile= await this.redis.getOrSet<ProfileEntity>(`user:${userId}:profile`,getProfile,this.PROFILE_TTL );
     if (!profile) {
       throw new NotFoundException('Profile not found');
     }
