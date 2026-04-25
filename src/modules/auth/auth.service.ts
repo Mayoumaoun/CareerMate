@@ -25,6 +25,9 @@ export class AuthService {
         if(!user){
             throw new UnauthorizedException("user does not exist");
         }
+        if (!user.passwordHash || user.passwordHash === '') {
+            throw new UnauthorizedException();
+        }     
         const isMatch = await bcrypt.compare(signInDto.password, user.passwordHash);
         if(!isMatch ){
             throw new UnauthorizedException("wrong password");
