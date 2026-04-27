@@ -22,13 +22,24 @@ Authorization: Bearer {{token}}
     "country": "Tunisia",
     "city": "Tunis",
     "dateOfBirth": "1998-05-15",
-    "gender": "male",
-    "email": "ahmed@example.com",
-    "address": "123 Avenue de la Liberté",
-    "zipCode": "1001"
+    "gender": "male"
   },
   "bio": "Je suis un développeur passionné par les technologies web et mobile"
 }
+
+###
+### ========== GET PROFILE ==========
+### Récupérer le profil actuel
+###
+GET {{baseUrl}}/profile
+Authorization: Bearer {{token}}
+
+###
+### ========== GET PROFILE SUMMARY ==========
+### Récupérer un résumé du profil avec score et pourcentage de complétude
+###
+GET {{baseUrl}}/profile/summary
+Authorization: Bearer {{token}}
 
 ###
 ### ========== STEP 2️⃣: UPDATE STEP 2 - EDUCATION ==========
@@ -63,7 +74,7 @@ Authorization: Bearer {{token}}
 ###
 ### ========== STEP 3️⃣: UPDATE STEP 3 - SKILLS ==========
 ### Ajouter les compétences (Step 3)
-### ✅ MINIMUM: 3 compétences requises
+### ✅ Niveaux valides: beginner, intermediate, advanced, expert
 ###
 PUT {{baseUrl}}/profile/step/3
 Content-Type: application/json
@@ -126,6 +137,7 @@ Authorization: Bearer {{token}}
 ###
 ### ========== STEP 5️⃣: UPDATE STEP 5 - PROJECTS ==========
 ### Ajouter les projets (Step 5)
+### ℹ️ Pour créer plusieurs projets, passez-les tous dans la liste "projects"
 ###
 PUT {{baseUrl}}/profile/step/5
 Content-Type: application/json
@@ -163,6 +175,7 @@ Authorization: Bearer {{token}}
 ###
 ### ========== STEP 6️⃣: UPDATE STEP 6 - LANGUAGES ==========
 ### Ajouter les langues (Step 6)
+### ✅ Niveaux CEFR valides: A1, A2, B1, B2, C1, C2, native
 ###
 PUT {{baseUrl}}/profile/step/6
 Content-Type: application/json
@@ -171,16 +184,22 @@ Authorization: Bearer {{token}}
 {
   "languages": [
     {
-      "name": "Arabe",
-      "level": "native"
+      "language": "French",
+      "level": "native",
+      "certificate": "https://certificates.example.com/french-native.pdf"
     },
     {
-      "name": "Français",
-      "level": "fluent"
+      "language": "English",
+      "level": "C1",
+      "certificate": "https://certificates.example.com/english-c1.pdf"
     },
     {
-      "name": "Anglais",
-      "level": "advanced"
+      "language": "Arabic",
+      "level": "B2"
+    },
+    {
+      "language": "German",
+      "level": "A2"
     }
   ]
 }
@@ -196,69 +215,56 @@ Authorization: Bearer {{token}}
 {
   "certifications": [
     {
-      "name": "React Developer Certification",
-      "date": "2024-03-15",
-      "organization": "Udemy",
-      "context": "Online course",
-      "domain": "Frontend",
-      "url": "https://udemy.com/react-cert"
-    },
-    {
-      "name": "AWS Solutions Architect Associate",
-      "date": "2024-06-20",
+      "name": "AWS Certified Solutions Architect",
       "organization": "Amazon Web Services",
-      "context": "Professional certification",
-      "domain": "Cloud",
-      "url": "https://aws.amazon.com/certification"
+      "date": "2025-06-20",
+      "domain": "Cloud Architecture",
+      "context": "Professional Development",
+      "url": "https://credentials.example.com/aws-cert-123"
     },
     {
-      "name": "SCRUM Master Certification",
-      "date": "2024-02-10",
+      "name": "Kubernetes Administrator Certification",
+      "organization": "The Linux Foundation",
+      "date": "2024-12-15",
+      "domain": "Container Orchestration",
+      "context": "Professional Development",
+      "url": "https://credentials.example.com/cka-456"
+    },
+    {
+      "name": "Professional Scrum Master",
       "organization": "Scrum.org",
-      "context": "Professional certification",
+      "date": "2024-03-10",
       "domain": "Project Management",
-      "url": "https://www.scrum.org"
+      "context": "Professional Development",
+      "url": "https://credentials.example.com/psm-789"
     }
   ]
 }
 
 ###
-### ========== STEP 8️⃣: UPDATE STEP 8 - TARGET PROFILE (FINAL STEP) ==========
-### Ajouter le profil cible / objectifs de carrière (Step 8 - ÉTAPE FINALE)
+### ========== STEP 8️⃣: UPDATE STEP 8 - TARGET PROFILE / CAREER GOALS ==========
+### Définir le profil cible et les préférences de carrière (Step 8)
+### ✅ Niveaux d'intérêt: not_interested, somewhat_interested, very_interested
+### ✅ Types de contrats: cdi, cdd, stage, freelance, interim
+### ✅ Types de travail: full_remote, hybrid, onsite
+### ✅ Disponibilité: immediate, two_weeks, one_month, two_months, three_months
 ###
 PUT {{baseUrl}}/profile/step/8
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "shortTermObjective": "Devenir Senior Developer dans une startup tech innovante",
-  "longTermObjective": "Créer ma propre entreprise de développement logiciel",
-  "targetPositions": [
+  "targetPosition": [
     "Senior Full Stack Developer",
-    "Technical Lead",
-    "Engineering Manager"
+    "Tech Lead"
   ],
-  "sectorPreferences": [
-    {
-      "name": "Technology",
-      "interest": "very_interested",
-      "weight": 5
-    },
-    {
-      "name": "Fintech",
-      "interest": "very_interested",
-      "weight": 4
-    },
-    {
-      "name": "E-Commerce",
-      "interest": "somewhat_interested",
-      "weight": 3
-    }
-  ],
-  "minSalary": 50000,
-  "maxSalary": 100000,
-  "salaryType": "gross",
-  "contractTypes": [
+  "preferredLocations": ["Tunis", "Remote"],
+  "salaryExpectation": {
+    "min": 2500,
+    "max": 4000,
+    "type": "net"
+  },
+  "preferredContractTypes": [
     {
       "type": "cdi",
       "preferred": true
@@ -268,34 +274,82 @@ Authorization: Bearer {{token}}
       "preferred": false
     }
   ],
-  "targetCities": [
-    "Tunis",
-    "Paris",
-    "Berlin"
-  ],
   "remotePreference": {
     "type": "hybrid",
-    "hybridDays": 3
+    "flexible": true
   },
-  "availability": "immediate"
+  "availability": "immediate",
+  "sectorPreferences": [
+    {
+      "name": "Technology",
+      "interest": "very_interested",
+      "weight": 5
+    },
+    {
+      "name": "FinTech",
+      "interest": "very_interested",
+      "weight": 4
+    },
+    {
+      "name": "HealthTech",
+      "interest": "somewhat_interested",
+      "weight": 3
+    }
+  ],
+  "careerGoals": {
+    "shortTerm": "Devenir Senior Developer dans une startup tech innovante",
+    "longTerm": "Créer ma propre startup ou devenir CTO"
+  },
+  "preferredWorkEnvironment": "Entreprise dynamique avec bonne culture DevOps",
+  "additionalRequirements": "Formation continue, flexibilité horaire, télétravail 3 jours/semaine"
 }
 
 ###
-### ========== GET PROFILE ==========
-### Récupérer le profil complet avec toutes les étapes
+### ========== UPDATE COMPLETE PROFILE ==========
+### Mettre à jour tout le profil d'un coup (optionnel)
+### Utile pour les mises à jour massives
 ###
-GET {{baseUrl}}/profile
+PUT {{baseUrl}}/profile
+Content-Type: application/json
 Authorization: Bearer {{token}}
 
-###
-### ========== GET PROFILE SUMMARY ==========
-### Récupérer le résumé du profil avec score et pourcentage de complétude
-###
-GET {{baseUrl}}/profile/summary
-Authorization: Bearer {{token}}
-
-###
-### ========== MODIFY STEP 1 (Exemple: Changer de ville) ==========
+{
+  "step1": {
+    "firstName": "MOEZ",
+    "lastName": "Ben Mohamed",
+    "phone": "+21625123456",
+    "country": "Tunisia",
+    "city": "Tunis",
+    "dateOfBirth": "1998-05-15",
+    "gender": "male"
+  },
+  "bio": "Je suis un développeur passionné par les technologies web et mobile",
+  "step2": {
+    "userLevel": "Junior",
+    "education": [
+      {
+        "degree": "Licence Informatique",
+        "institution": "Université de Tunis",
+        "field": "Computer Science",
+        "startDate": "2020-09-01",
+        "endDate": "2023-06-30",
+        "location": "Tunis"
+      }
+    ]
+  },
+  "step3": {
+    "skills": [
+      {
+        "name": "React",
+        "level": "advanced"
+      },
+      {
+        "name": "Node.js",
+        "level": "intermediate"
+      }
+    ]
+  }
+}
 ### Modifier l'étape 1 (par exemple, changer la ville)
 ###
 PUT {{baseUrl}}/profile/step/1

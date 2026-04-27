@@ -3,12 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProfileEntity } from './entities/profile.entity';
 import { ProjectEntity } from './entities/projet.entity';
-import { CvEntity } from './entities/cv.entity';
 import { UserEntity } from '../user/entities/user.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import * as jsonSchemas from 'src/common/types/json-schemas';
 import { RedisService } from '../../common/redis/redis.service';
+import { DiplomaDto } from './dtos';
 
 @Injectable()
 export class ProfileService {
@@ -80,7 +80,8 @@ export class ProfileService {
     } as any))
     const profile= await this.redis.getOrSet<ProfileEntity>(`user:${userId}:profile`,getProfile,24 * 3600 * 1000 );
     if (!profile) {
-      throw new NotFoundException('Profile not found');
+      //throw new NotFoundException('Profile not found');
+      return null;
     }
 
     return profile;
@@ -101,13 +102,13 @@ export class ProfileService {
         break;
       case 2:
         profile.userLevel = stepData.userLevel;
-        const education = stepData.education.map((edu: any) => ({
+        const education = stepData.education.map((edu: DiplomaDto) => ({
           degree: edu.degree,
           institution: edu.institution,
           field: edu.field,
           startDate: edu.startDate,
           endDate: edu.endDate || edu.startDate,
-          location: edu.location || '',
+          location: edu.location,
         }));
         profile.education = education;
         break;
@@ -160,7 +161,6 @@ export class ProfileService {
     return this.profileRepository.save(profile);
   }
 
-  
   
   async updateProjects(userId: string, newProjectsData: any[]): Promise<void> {
   const profile = await this.getProfile(userId);
@@ -257,7 +257,8 @@ export class ProfileService {
           institution: edu.institution,
           field: edu.field,
           startDate: edu.startDate,
-          endDate: edu.endDate || edu.startDate,
+          endDate: edu.endDate || edu.startDate,                            
+          location: edu.location,
         })) as jsonSchemas.EducationItem[];
       }
 

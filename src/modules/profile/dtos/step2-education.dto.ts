@@ -49,6 +49,9 @@ export class DiplomaDto {
   @IsString()
   @IsOptional()
   endDate?: string; // Optionnel - défaut = startDate
+  @IsString()
+  @IsNotEmpty()
+  location: string;
  
 }
 

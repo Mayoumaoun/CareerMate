@@ -14,7 +14,6 @@ export class AuthService {
     async signUp(newUser: CreateUserDto){
         const user=await this.userService.findOneByCriteria("email",newUser.email);
         if(user){
-            //redirect to login
         }
         return await this.userService.create(newUser);
 
