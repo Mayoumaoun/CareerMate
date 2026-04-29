@@ -2,7 +2,11 @@ import * as jsonSchemas from "src/common/types/json-schemas";
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "src/modules/user/entities/user.entity";
 
-enum JobOfferStatus {}
+export enum JobOfferStatus {
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  CLOSED = 'closed',
+}
 
 @Entity("job_offer")
 export class JobOfferEntity {

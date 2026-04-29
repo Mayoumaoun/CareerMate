@@ -12,6 +12,8 @@ import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { AuthController } from './modules/auth/auth.controller';
 import { CvModule } from './modules/cv/cv.module';
+import { LettreMotivationModule } from './modules/career/lettre-motivation/lettre-motivation.module';
+import { JobOfferEntity } from './modules/career/job-offer/job-offer.entity';
 
 @Module({
   imports: [
@@ -33,7 +35,8 @@ import { CvModule } from './modules/cv/cv.module';
         synchronize: process.env.NODE_ENV === 'development',
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule,CvModule
+    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, CvModule, LettreMotivationModule,
+    JobOfferEntity
   ],
   controllers: [AppController],
   providers: [AppService],

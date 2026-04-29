@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sentence-transformers
+sqlalchemy
+psycopg2-binary
+datasets
+scikit-learn
+numpy
+groq
+reportlab
+pandas
+python-dotenv
+pydantic
+torch
+transformers
+tqdm
