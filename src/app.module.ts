@@ -36,7 +36,7 @@ import { JobOfferEntity } from './modules/career/job-offer/job-offer.entity';
         synchronize: process.env.NODE_ENV === 'development',
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule
+     RedisModule,
     CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, CvModule, LettreMotivationModule,
     JobOfferEntity
   ],
