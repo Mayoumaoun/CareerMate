@@ -13,8 +13,14 @@ export class UserService {
     async create(createUserDto: CreateUserDto) {
         try{
             const {password, ...rest}= createUserDto;
-            const salt= await bcrypt.genSalt();
-            const passwordHash= await bcrypt.hash(password,salt);
+            let passwordHash;
+            if (password && password !== '') {
+                const salt= await bcrypt.genSalt();
+                passwordHash= await bcrypt.hash(password,salt);
+            } else {
+                passwordHash = ''; 
+            }
+            
             const user = this.userRepo.create({ ...rest, passwordHash });
             return await this.userRepo.save(user);
         }catch(e : any){

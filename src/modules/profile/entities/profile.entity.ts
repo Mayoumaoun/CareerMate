@@ -1,7 +1,7 @@
 import * as jsonSchemas from "src/common/types/json-schemas";
 import { UserEntity } from "src/modules/user/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { CvEntity } from 'src/modules/cv/cv.entity';
+import { CvEntity } from "../../cv/cv.entity";
 import { ProjectEntity } from "./projet.entity";
 import { Gender } from "src/modules/user/enums/gender.enum";
 

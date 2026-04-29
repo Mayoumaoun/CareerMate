@@ -8,6 +8,7 @@ import { UserEntity } from '../user/entities/user.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import * as jsonSchemas from 'src/common/types/json-schemas';
+import { RedisService } from '../../common/redis/redis.service';
 
 @Injectable()
 export class ProfileService {
@@ -17,10 +18,10 @@ export class ProfileService {
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
     @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>,
+    private readonly userRepository: Repository<UserEntity>, private readonly redis: RedisService
   ) {}
 
- 
+  private readonly  PROFILE_TTL = 24 * 3600; 
   async createProfile(
     userId: string,
     profileData: CreateProfileDto,
@@ -60,6 +61,7 @@ export class ProfileService {
       // Create and save profile
       const profile = this.profileRepository.create(profileData_obj);
       const savedProfile = await this.profileRepository.save(profile);
+      await this.redis.set(`user:${userId}:profile`,savedProfile,this.PROFILE_TTL );
 
       return savedProfile;
     } catch (error: any) {
@@ -71,11 +73,12 @@ export class ProfileService {
 
 
   async getProfile(userId: string): Promise<any> {
-    const profile = await this.profileRepository.findOne({
+
+    const getProfile = async () => (await this.profileRepository.findOne({
       where: { user: { id: userId } },
       relations: ['projects', 'cvs', 'user'],
-    } as any);
-
+    } as any))
+    const profile= await this.redis.getOrSet<ProfileEntity>(`user:${userId}:profile`,getProfile,this.PROFILE_TTL );
     if (!profile) {
       throw new NotFoundException('Profile not found');
     }
@@ -153,38 +156,37 @@ export class ProfileService {
     }
 
     profile.profilScore = await this.calculateProfileScore(profile);
+    await this.redis.del(`user:${userId}:profile`); 
     return this.profileRepository.save(profile);
   }
 
   
   
   async updateProjects(userId: string, newProjectsData: any[]): Promise<void> {
-    const profile = await this.getProfile(userId);
-    const existingProjects = await this.projectRepository.find({where: { profile: { id: profile.id } },});
-    for (let i = 0; i < newProjectsData.length; i++) {
-      const projectData = newProjectsData[i];
-      const project= await this.projectRepository.findOne({
-        where: { id: newProjectsData[i].projectId, profile: { id: profile.id } },
+  const profile = await this.getProfile(userId);
+  const existingProjects = await this.projectRepository.find({
+    where: { profile: { id: profile.id } },
+  });
+
+  for (const projectData of newProjectsData) {
+    const existing = projectData.projectId
+      ? existingProjects.find(p => p.id === projectData.projectId)
+      : null;
+
+    if (existing) {
+      await this.projectRepository.update(existing.id, {
+        title: projectData.title,
+        context: projectData.context,
+        description: projectData.description,
+        techStack: projectData.techStack || [],
+        projectUrl: projectData.projectUrl || '',
+        imageUrl: projectData.imageUrl || '',
+        date: projectData.date ? new Date(projectData.date) : existing.date,
       });
-      if(project){
-        await this.projectRepository
-                  .createQueryBuilder()
-                  .update(ProjectEntity)
-                  .set({
-                    title: projectData.title,
-                    context: projectData.context,
-                    description: projectData.description,
-                    techStack: projectData.techStack || [],
-                    projectUrl: projectData.projectUrl || '',
-                    imageUrl: projectData.imageUrl || '',
-                    date: projectData.date ? new Date(projectData.date) : project.date,
-                  })
-                  .where('id = :id', { id: project.id })
-                  .execute();
-      }
-      else{
-        const newProject = this.projectRepository.create({
-          title: projectData.title,        
+    } else {
+      await this.projectRepository.save(
+        this.projectRepository.create({
+          title: projectData.title,
           context: projectData.context,
           description: projectData.description,
           techStack: projectData.techStack || [],
@@ -192,35 +194,23 @@ export class ProfileService {
           imageUrl: projectData.imageUrl || '',
           date: projectData.date ? new Date(projectData.date) : new Date(),
           profile: { id: profile.id },
-        });
-        
-        const saved = await this.projectRepository.save(newProject);
-        await this.projectRepository
-                    .createQueryBuilder()
-                    .relation(ProjectEntity, 'profile')
-                    .of(saved.id)
-                    .set(profile.id);
-      }
+        }),
+      );
     }
-      const incomingIds = newProjectsData.map(p => p.projectId).filter(Boolean);
-      const toDelete = existingProjects.filter(p => !incomingIds.includes(p.id));
-      if (toDelete.length > 0) {
-        await this.projectRepository.remove(toDelete);
-      }
-    
   }
 
+  const incomingIds = newProjectsData.map(p => p.projectId).filter(Boolean);
+  const toDelete = existingProjects.filter(p => !incomingIds.includes(p.id));
+  if (toDelete.length > 0) {
+    await this.projectRepository.remove(toDelete);
+  }
+
+    await this.redis.del(`user:${userId}:profile`); 
+
+}
   
   async getProfileSummary(userId: string): Promise<any> {
-    const profile = await this.profileRepository.findOne({
-      where: { user: { id: userId } },
-      relations: ['projects', 'user'],
-    });
-
-    if (!profile) {
-      throw new NotFoundException('Profile not found');
-    }
-
+    const profile = await this.getProfile(userId);
     const projects = await this.projectRepository.find({
       where: { profile: { id: profile.id } },
     });
@@ -330,12 +320,12 @@ export class ProfileService {
 
       // Save updated profile
       const updatedProfile = await this.profileRepository.save(profile);
+      await this.redis.del(`user:${userId}:profile`); 
 
       // Update projects if provided
       if (profileData.step5 && profileData.step5.projects) {
         await this.updateProjects(userId, profileData.step5.projects);
       }
-
       return updatedProfile;
     } catch (error: any) {
       throw new BadRequestException(
