@@ -1,22 +1,39 @@
-import { UserEntity } from "src/modules/user/entities/user.entity";
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn, TableInheritance } from "typeorm";
-import { FeedbackSimulation } from "./feedback-simulation.entity";
+import { UserEntity } from 'src/modules/user/entities/user.entity';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+  TableInheritance,
+} from 'typeorm';
+import { FeedbackSimulation } from './feedback-simulation.entity';
 
 export enum SimulationType {
-    ENTRETIEN = "entretien",
-    PITCH = "pitch",
+  ENTRETIEN = 'entretien',
+  PITCH = 'pitch',
 }
-@Entity("simulation")
-@TableInheritance({ column: { type: 'enum', name: 'type', enum: SimulationType } })
+
+export enum SimulationMode {
+  VOICE = 'voice',
+  TEXT = 'text',
+}
+
+@Entity('simulation')
+@TableInheritance({
+  column: { type: 'enum', name: 'type', enum: SimulationType },
+})
 export class Simulation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  mode: string;
+  @Column({ type: 'enum', enum: SimulationMode, default: SimulationMode.TEXT })
+  mode: SimulationMode;
 
-  @Column()
-  score: number;
+  @Column({ type: 'float', nullable: true, default: null })
+  score: number | null; // 0-100
 
   @CreateDateColumn()
   simulatedAt: Date;
@@ -25,6 +42,6 @@ export class Simulation {
   @JoinColumn()
   user: UserEntity;
 
-  @OneToOne(() => FeedbackSimulation,{nullable: true})
+  @OneToOne(() => FeedbackSimulation, { nullable: true })
   feedback: FeedbackSimulation;
 }

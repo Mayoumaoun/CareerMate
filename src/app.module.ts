@@ -15,6 +15,8 @@ import { AuthController } from './modules/auth/auth.controller';
 import { CvModule } from './modules/cv/cv.module';
 import { LettreMotivationModule } from './modules/career/lettre-motivation/lettre-motivation.module';
 import { JobOfferEntity } from './modules/career/job-offer/job-offer.entity';
+import { SimulationType } from './modules/career/simulation/entities/simulation.entity';
+import { SimulationModule } from './modules/career/simulation/entretien.module';
 
 @Module({
   imports: [
@@ -34,11 +36,21 @@ import { JobOfferEntity } from './modules/career/job-offer/job-offer.entity';
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
         synchronize: process.env.NODE_ENV === 'development',
-      })
+        dropSchema: false,
+      }),
     }),
-     RedisModule,
-    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, CvModule, LettreMotivationModule,
-    JobOfferEntity
+    RedisModule,
+    CareerModule,
+    AuthModule,
+    DiscoveryModule,
+    ProfileModule,
+    PreferencesModule,
+    PresenceModule,
+    UserModule,
+    CvModule,
+    LettreMotivationModule,
+    JobOfferEntity,
+    SimulationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
