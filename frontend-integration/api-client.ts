@@ -26,6 +26,7 @@ import {
   Step5ProjectsDto,
   Step6LanguagesDto,
   Step7CertificationsDto,
+  Step8TargetProfileDto,
   ErrorResponse,
 } from './types';
 
@@ -284,6 +285,20 @@ const profileAPI = {
     payload: Step7CertificationsDto
   ): Promise<ProfileEntity> => {
     return request<ProfileEntity>('/profile/step/7', {
+      method: 'PUT',
+      token,
+      body: payload,
+    });
+  },
+
+  /**
+   * Mettre à jour l'étape 8 (Objectifs & Préférences)
+   */
+  updateStep8: async (
+    token: string,
+    payload: Step8TargetProfileDto
+  ): Promise<ProfileEntity> => {
+    return request<ProfileEntity>('/profile/step/8', {
       method: 'PUT',
       token,
       body: payload,

@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsArray, IsOptional, IsUrl, IsDateString, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ProjectDto {
@@ -18,7 +18,8 @@ export class ProjectDto {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
-  projectId: string;
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  projectId?: string;
 
   @ApiProperty({
     description: 'Project context (academic, personal, professional)',
@@ -43,6 +44,7 @@ export class ProjectDto {
   })
   @IsUrl()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   projectUrl?: string;
 
   @ApiProperty({
@@ -52,6 +54,7 @@ export class ProjectDto {
   })
   @IsUrl()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   githubUrl?: string;
 
   @ApiProperty({

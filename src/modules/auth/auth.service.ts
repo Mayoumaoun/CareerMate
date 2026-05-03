@@ -14,6 +14,7 @@ export class AuthService {
     async signUp(newUser: CreateUserDto){
         const user=await this.userService.findOneByCriteria("email",newUser.email);
         if(user){
+            //redirect to login
         }
         return await this.userService.create(newUser);
 
@@ -24,6 +25,9 @@ export class AuthService {
         if(!user){
             throw new UnauthorizedException("user does not exist");
         }
+        if (!user.passwordHash || user.passwordHash === '') {
+            throw new UnauthorizedException();
+        }     
         const isMatch = await bcrypt.compare(signInDto.password, user.passwordHash);
         if(!isMatch ){
             throw new UnauthorizedException("wrong password");
@@ -33,7 +37,7 @@ export class AuthService {
     }
 
     async jwtLogin(user:any){
-        const payload = { userId: user.id, username: user.username};
+        const payload = { sub: user.id, username: user.username};
         return {
             access_token: await this.jwtService.signAsync(payload),
             //refresh_token

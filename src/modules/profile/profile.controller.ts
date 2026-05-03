@@ -12,10 +12,14 @@ import {
   BadRequestException,
   ValidationPipe,
   Req,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiBody, ApiUnauthorizedResponse, ApiBadRequestResponse,} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ProfileService } from './profile.service';
+import { CvParserService } from './services/cv-parser.service';
 import { ProfileEntity } from './entities/profile.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
@@ -26,6 +30,7 @@ import { Step4ExperiencesDto } from './dtos/step4-experiences.dto';
 import { Step5ProjectsDto } from './dtos/step5-projects.dto';
 import { Step6LanguagesDto } from './dtos/step6-languages.dto';
 import { Step7CertificationsDto } from './dtos/step7-certifications.dto';
+import { ImportCVResponseDto } from './dtos/import-cv.dto';
 import { ValidateDatesPipe } from './pipes/validate-dates.pipe';
 import { ValidateSkillsPipe } from './pipes/validate-skills.pipe';
 import { ValidateAgeMinimumPipe } from './pipes/validate-age-minimum.pipe';
@@ -38,7 +43,10 @@ import { TargetProfileValidationDto } from './dtos/target-profile-validation.dto
 @UsePipes(new ValidationPipe({ whitelist: true }), new ValidateTargetProfilePipe())
 @UseGuards(JwtAuthGuard)
 export class ProfileController {
-  constructor(private readonly profileService: ProfileService) {}
+  constructor(
+    private readonly profileService: ProfileService,
+    private readonly cvParserService: CvParserService,
+  ) {}
 
 
   @ApiOperation({ summary: 'Create user profile' })
@@ -77,6 +85,35 @@ export class ProfileController {
   async getProfileSummary(@Req() request: any): Promise<{ profileScore: number; completionPercentage: number; summary: any }> {
     const userId = request.user.userId;
     return await this.profileService.getProfileSummary(userId);
+  }
+
+  /**
+   * Import CV et retourner les données parsées
+   * POST /profile/import-cv
+   */
+  @ApiOperation({ summary: 'Import CV and parse data' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'CV imported and parsed successfully.', type: ImportCVResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiBadRequestResponse({ description: 'Invalid file or parsing error' })
+  @Post('import-cv')
+  @UseInterceptors(FileInterceptor('file'))
+  async importCV(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<ImportCVResponseDto> {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    console.log('[Profile Controller] 📤 CV import started');
+    console.log('[Profile Controller] File:', {
+      originalname: file.originalname,
+      size: file.size,
+      mimetype: file.mimetype,
+    });
+
+    const result = await this.cvParserService.importCV(file);
+    console.log('[Profile Controller] ✅ CV import completed');
+    return result;
   }
 
   

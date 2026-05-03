@@ -145,6 +145,46 @@ export interface Step7CertificationsDto {
 }
 
 // ============================================
+// PROFILE - ÉTAPE 8 (Career Goals & Preferences)
+// ============================================
+
+export type SectorInterestLevel =
+  | "not_interested"
+  | "somewhat_interested"
+  | "very_interested";
+
+export type ContractTypeEnum =
+  | "cdi"
+  | "cdd"
+  | "stage"
+  | "freelance"
+  | "interim";
+
+export type RemoteTypeEnum = "full_remote" | "hybrid" | "onsite";
+export type AvailabilityEnum =
+  | "immediate"
+  | "two_weeks"
+  | "one_month"
+  | "two_months"
+  | "three_months";
+
+export interface SectorPreferenceDto {
+  name: string;
+  interest: SectorInterestLevel;
+  weight: number; // 1..5
+}
+
+export interface ContractTypeItemDto {
+  type: ContractTypeEnum;
+  preferred?: boolean;
+}
+
+export interface RemotePreferenceDto {
+  type: RemoteTypeEnum;
+  hybridDays?: number; // required only when type === "hybrid"
+}
+
+// ============================================
 // PROFILE - TARGET POSITION
 // ============================================
 
@@ -159,11 +199,18 @@ export interface TargetPosition {
 // ============================================
 
 export interface TargetProfileValidationDto {
-  targetTitle?: string;
-  desiredCompanies?: string[];
-  expectedSalary?: number;
-  worktype?: string;
+  targetPositions?: string[];
+  sectorPreferences?: SectorPreferenceDto[];
+  minSalary?: number;
+  maxSalary?: number;
+  salaryType?: "gross" | "net";
+  contractTypes?: ContractTypeItemDto[];
+  targetCities?: string[];
+  remotePreference?: RemotePreferenceDto;
+  availability?: AvailabilityEnum;
 }
+
+export type Step8TargetProfileDto = TargetProfileValidationDto;
 
 // ============================================
 // PROFILE - CREATE & UPDATE DTOs
@@ -183,6 +230,7 @@ export interface UpdateProfileDto {
   step5?: Step5ProjectsDto;
   step6?: Step6LanguagesDto;
   step7?: Step7CertificationsDto;
+  step8?: Step8TargetProfileDto;
   bio?: string;
   shortTermGoals?: string;
   longTermGoals?: string;
