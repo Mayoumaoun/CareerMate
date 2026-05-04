@@ -1,4 +1,4 @@
-import { IsArray, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, Min } from 'class-validator';
 import { JobSource } from '../job-matching.types';
 
 export class RunJobMatchingDto {
@@ -14,6 +14,6 @@ export class RunJobMatchingDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsEnum(['adzuna', 'themuse'], { each: true })
   sources?: JobSource[];
 }

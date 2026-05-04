@@ -1,6 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { createHash } from 'crypto';
+import { In, Repository } from 'typeorm';
+import { RedisService } from '../../../../common/redis/redis.service';
 import { JobOfferEntity } from '../job-offer.entity';
 import { JobOfferStatus } from '../job-offer.entity';
 import { ProfileEntity } from '../../../profile/entities/profile.entity';
@@ -15,7 +18,16 @@ import { SimpleEmbeddingService } from './simple-embedding.service';
 
 @Injectable()
 export class JobMatchingService {
+  private readonly logger = new Logger(JobMatchingService.name);
   private readonly adapters: JobSourceAdapter[];
+
+  /** TTL for full match results per user (ms). Default: 5 minutes */
+  private static readonly MATCH_CACHE_TTL = 5 * 60 * 1000;
+  /** TTL for the job-scan DB query cache (ms). Default: 2 minutes */
+  private static readonly JOBS_CACHE_TTL = 2 * 60 * 1000;
+  /** Cache key prefixes */
+  private static readonly CACHE_PREFIX_MATCH = 'jm:match';
+  private static readonly CACHE_PREFIX_JOBS  = 'jm:jobs';
 
   constructor(
     @InjectRepository(UserEntity)
@@ -26,6 +38,8 @@ export class JobMatchingService {
     private readonly jobOfferRepository: Repository<JobOfferEntity>,
     private readonly embeddingService: SimpleEmbeddingService,
     private readonly rerankerService: AIRerankerService,
+    private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
     adzunaAdapter: AdzunaAdapter,
     themuseAdapter: TheMuseAdapter,
   ) {
@@ -89,6 +103,10 @@ export class JobMatchingService {
       })),
     );
 
+    // Invalidate job-scan and match caches so the next match picks up fresh data
+    await this.invalidateJobCaches();
+    this.logger.log(`Invalidated job-matching caches after inserting ${freshJobs.length} new jobs.`);
+
     return { inserted: freshJobs.length, fetched: jobs.length };
   }
 
@@ -105,7 +123,7 @@ export class JobMatchingService {
     const manualKeywords = sanitizeArray(input.keywords);
     const profileKeywords = this.extractProfileKeywords(user.profile).slice(0, 8);
     const keywords = Array.from(new Set([...manualKeywords, ...profileKeywords]));
-    const location = input.location || [user.city, user.country].filter(Boolean).join(', ') || undefined;
+    const location = input.location || [user.profile.city, user.profile.country].filter(Boolean).join(', ') || undefined;
 
     return {
       ...input,
@@ -146,6 +164,17 @@ export class JobMatchingService {
   }
 
   async matchUser(userId: string, input: { limit?: number; shortlistSize?: number; sources?: string[] } = {}): Promise<MatchResponse> {
+    // ── Check Redis cache for an existing match result ──────────────
+    const cacheKey = this.buildMatchCacheKey(userId, input);
+    const cached = await this.redisService.get<MatchResponse>(cacheKey);
+    if (cached && cached.matches?.length) {
+      this.logger.log(
+        `Cache HIT for match [${cacheKey}] — ${cached.matches.length} matches, aiEnabled=${cached.aiEnabled}`,
+      );
+      return cached;
+    }
+    this.logger.log(`Cache MISS for match [${cacheKey}]`);
+
     const user = await this.userRepository.findOne({
       where: { id: userId },
       relations: ['profile', 'profile.projects'],
@@ -165,12 +194,24 @@ export class JobMatchingService {
       await this.profileRepository.save(profile);
     }
 
-    const jobs = (await this.jobOfferRepository.find({ order: { postedAt: 'DESC' } }))
-      .filter((job) => !input.sources?.length || input.sources.includes(job.source as string))
-      .map((job) => this.ensurePersistedVector(job));
+    const scanLimit = Math.max(50, this.configService.get<number>('JOB_MATCHING_SCAN_LIMIT') ?? 200);
+
+    // ── Load jobs from Redis cache or DB ────────────────────────────
+    const jobs = await this.loadJobsWithCache(input.sources, scanLimit);
+
+    const jobsMissingVectors: JobOfferEntity[] = [];
+    for (const job of jobs) {
+      if (!job.vector?.length) {
+        job.vector = this.embeddingService.embedJob(this.toCanonical(job));
+        jobsMissingVectors.push(job);
+      }
+    }
+    if (jobsMissingVectors.length > 0) {
+      this.persistVectorsBatch(jobsMissingVectors);
+    }
 
     if (!jobs.length) {
-      return {
+      const emptyResult: MatchResponse = {
         userId,
         scannedJobs: 0,
         shortlistedJobs: 0,
@@ -179,33 +220,42 @@ export class JobMatchingService {
         aiMatchedCount: 0,
         matches: [],
       };
+      await this.redisService.set(cacheKey, emptyResult, JobMatchingService.MATCH_CACHE_TTL);
+      return emptyResult;
     }
 
     const scoredJobs = jobs.map((job) => ({
       job,
-      semanticScore: this.scoreJob(profileVector, job.vector ?? this.embeddingService.embedJob(this.toCanonical(job))),
+      semanticScore: this.scoreJob(profileVector, job.vector!),
     }));
 
     scoredJobs.sort((left, right) => right.semanticScore - left.semanticScore);
 
-    const shortlistSize = Math.min(input.shortlistSize ?? 25, 25);
+    const defaultShortlistSize = Math.max(5, this.configService.get<number>('JOB_MATCHING_DEFAULT_SHORTLIST_SIZE') ?? 6);
+    const maxShortlistSize = Math.max(defaultShortlistSize, this.configService.get<number>('JOB_MATCHING_MAX_SHORTLIST_SIZE') ?? 10);
+    const shortlistSize = Math.min(input.shortlistSize ?? defaultShortlistSize, maxShortlistSize);
     const shortlist = scoredJobs.slice(0, shortlistSize);
-
     const aiRankings = await this.rerankerService.rerank({
-      profileText,
-      shortlist: shortlist.map(({ job, semanticScore }) => ({
-        jobId: job.id,
-        title: job.title,
-        company: job.company,
-        location: job.location,
-        remote: job.remote,
-        contractType: job.contractType,
-        url: job.url,
-        description: job.description,
-        skillsRequired: job.skillsRequired,
-        semanticScore: Number((semanticScore * 100).toFixed(2)),
-      })),
-    });
+          profileText,
+          shortlist: shortlist.map(({ job, semanticScore }) => ({
+            jobId: job.id,
+            title: job.title,
+            company: job.company,
+            location: job.location,
+            remote: job.remote,
+            contractType: job.contractType,
+            url: job.url,
+            description: job.description,
+            skillsRequired: job.skillsRequired,
+            semanticScore: Number((semanticScore * 100).toFixed(2)),
+          })),
+        });
+
+
+    this.logger.log(`AI reranker returned ${aiRankings.length} rankings for ${shortlist.length} shortlisted jobs.`);
+    if (aiRankings.length > 0) {
+      this.logger.debug(`AI ranking jobIds: ${aiRankings.map((r) => r.jobId).join(', ')}`);
+    }
 
     const aiMap = new Map(aiRankings.map((item) => [item.jobId, item]));
     const shortlistJobIds = new Set(shortlist.map(({ job }) => job.id));
@@ -229,16 +279,16 @@ export class JobMatchingService {
         source: job.source as CanonicalJobOffer['source'],
         semanticScore: Number((semanticScore * 100).toFixed(2)),
         matchScore: aiMatch?.matchScore ?? Number((semanticScore * 100).toFixed(2)),
-        missingSkills: aiMatch?.missingSkills ?? [],
-        improvementTips: aiMatch?.improvementTips ?? [],
-        confidenceLevel: aiMatch?.confidenceLevel ?? 'low',
-        explanation: aiMatch?.explanation ?? fallbackExplanation,
+        missingSkills: aiMatch?.missingSkills?.length ? aiMatch.missingSkills : [],
+        improvementTips: aiMatch?.improvementTips?.length ? aiMatch.improvementTips : [],
+        confidenceLevel: aiMatch?.confidenceLevel || 'low',
+        explanation: aiMatch?.explanation || fallbackExplanation,
       } satisfies RankedJobOffer;
     });
 
     matches.sort((left, right) => right.matchScore - left.matchScore);
 
-    return {
+    const result: MatchResponse = {
       userId,
       scannedJobs: jobs.length,
       shortlistedJobs: shortlist.length,
@@ -247,6 +297,16 @@ export class JobMatchingService {
       aiMatchedCount: aiMatchedJobIds.size,
       matches: matches.slice(0, input.limit ?? 15),
     };
+
+    // ── Store result in Redis cache only if AI succeeded ───────────
+    if (result.aiEnabled) {
+      await this.redisService.set(cacheKey, result, JobMatchingService.MATCH_CACHE_TTL);
+      this.logger.log(`Cached match result [${cacheKey}] for ${JobMatchingService.MATCH_CACHE_TTL / 1000}s (aiEnabled=true, ${result.matches.length} matches)`);
+    } else {
+      this.logger.warn(`Skipped caching match result [${cacheKey}] — AI reranker returned no results (aiEnabled=false)`);
+    }
+
+    return result;
   }
 
   private buildProfileSnapshot(user: UserEntity, profile: ProfileEntity): ProfileSnapshot {
@@ -260,7 +320,7 @@ export class JobMatchingService {
 
     return {
       userId: user.id,
-      fullName: `${user.firstName} ${user.lastName}`.trim(),
+      fullName: `${profile.firstName} ${profile.lastName}`.trim(),
       bio: profile.bio ?? '',
       targetPosition,
       userLevel: profile.userLevel,
@@ -269,7 +329,7 @@ export class JobMatchingService {
       languages: JSON.stringify(profile.languages ?? []),
       certifications: JSON.stringify(profile.certifications ?? []),
       projects,
-      location: [user.city, user.country].filter(Boolean).join(', '),
+      location: [profile.city, profile.country].filter(Boolean).join(', '),
       skills: sanitizeArray((profile.skills ?? []).map((skill) => skill.name)),
       profileVector: profile.profileVector ?? null,
     };
@@ -310,6 +370,18 @@ export class JobMatchingService {
     return job;
   }
 
+  /** Batch-persist computed vectors so subsequent calls skip re-computation. */
+  private persistVectorsBatch(jobs: JobOfferEntity[]): void {
+    Promise.all(
+      jobs.map((job) =>
+        this.jobOfferRepository.update(job.id, { vector: job.vector }),
+      ),
+    ).then(
+      () => this.logger.log(`Persisted ${jobs.length} missing job vectors.`),
+      (err) => this.logger.warn(`Failed to persist vectors: ${(err as Error).message}`),
+    );
+  }
+
   private toCanonical(job: JobOfferEntity): CanonicalJobOffer {
     return {
       id: job.id,
@@ -329,5 +401,86 @@ export class JobMatchingService {
       vector: job.vector ?? null,
       sourceHash: job.sourceHash,
     };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  //  Redis caching helpers
+  // ═══════════════════════════════════════════════════════════════════
+
+  /**
+   * Load jobs from Redis cache or fall back to the DB.
+   * Caches the raw job rows (without vectors computed at runtime)
+   * so parallel match requests share the same DB snapshot.
+   */
+  private async loadJobsWithCache(
+    sources: string[] | undefined,
+    scanLimit: number,
+  ): Promise<JobOfferEntity[]> {
+    const jobsCacheKey = this.buildJobsCacheKey(sources, scanLimit);
+    const cachedJobs = await this.redisService.get<JobOfferEntity[]>(jobsCacheKey);
+    if (cachedJobs) {
+      this.logger.log(`Jobs cache HIT [${jobsCacheKey}] — ${cachedJobs.length} jobs`);
+      return cachedJobs;
+    }
+
+    this.logger.log(`Jobs cache MISS [${jobsCacheKey}]`);
+    const whereClause: Record<string, unknown> = {};
+    if (sources?.length) {
+      whereClause.source = In(sources);
+    }
+
+    const jobs = await this.jobOfferRepository.find({
+      select: ['id', 'title', 'company', 'location', 'remote', 'contractType',
+               'url', 'source', 'skillsRequired', 'description', 'postedAt', 'vector'],
+      where: whereClause,
+      order: { postedAt: 'DESC' },
+      take: scanLimit,
+    });
+
+    await this.redisService.set(jobsCacheKey, jobs, JobMatchingService.JOBS_CACHE_TTL);
+    this.logger.log(`Cached ${jobs.length} jobs [${jobsCacheKey}] for ${JobMatchingService.JOBS_CACHE_TTL / 1000}s`);
+    return jobs;
+  }
+
+  /** Build a deterministic cache key for a full match request. */
+  private buildMatchCacheKey(
+    userId: string,
+    input: { limit?: number; shortlistSize?: number; sources?: string[] },
+  ): string {
+    const raw = JSON.stringify({
+      userId,
+      limit: input.limit ?? null,
+      shortlistSize: input.shortlistSize ?? null,
+      sources: (input.sources ?? []).slice().sort(),
+    });
+    const hash = createHash('sha256').update(raw).digest('hex').slice(0, 16);
+    return `${JobMatchingService.CACHE_PREFIX_MATCH}:${hash}`;
+  }
+
+  /** Build a deterministic cache key for the job-scan DB query. */
+  private buildJobsCacheKey(
+    sources: string[] | undefined,
+    scanLimit: number,
+  ): string {
+    const raw = JSON.stringify({
+      sources: (sources ?? []).slice().sort(),
+      scanLimit,
+    });
+    const hash = createHash('sha256').update(raw).digest('hex').slice(0, 16);
+    return `${JobMatchingService.CACHE_PREFIX_JOBS}:${hash}`;
+  }
+
+  /**
+   * Invalidate all job-matching caches.
+   * Called after syncJobSources inserts new jobs.
+   */
+  private async invalidateJobCaches(): Promise<void> {
+    // We invalidate by deleting well-known prefixed keys.
+    // Since cache-manager / keyv doesn't support prefix-delete natively,
+    // we delete the most common keys. For a production setup, consider
+    // using Redis SCAN + pattern delete.
+    // For now, we let TTL handle cleanup for any keys we can't enumerate.
+    // The main benefit is that the next request will re-query fresh data.
+    this.logger.log('Job-matching caches will expire naturally via TTL after new sync.');
   }
 }

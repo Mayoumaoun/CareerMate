@@ -15,14 +15,14 @@ export class UserEntity {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ unique: true })
-    email: string;
+    @Column({ unique: true, nullable: true })
+    email: string | null;
 
-    @Column({ unique: true })
-    username: string;
+    @Column({ unique: true, nullable: true })
+    username: string | null;
 
-    @Column()
-    passwordHash: string;
+    @Column({ nullable: true })
+    passwordHash: string | null;
 
     @CreateDateColumn()
     createdAt: Date;

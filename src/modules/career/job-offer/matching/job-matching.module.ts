@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { RedisModule } from '../../../../common/redis/redis.module';
 import { JobOfferEntity } from '../job-offer.entity';
 import { ProfileEntity } from '../../../profile/entities/profile.entity';
 import { UserEntity } from '../../../user/entities/user.entity';
@@ -11,7 +12,7 @@ import { JobMatchingService } from './job-matching.service';
 import { SimpleEmbeddingService } from './simple-embedding.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, ProfileEntity, JobOfferEntity])],
+  imports: [TypeOrmModule.forFeature([UserEntity, ProfileEntity, JobOfferEntity]), RedisModule],
   controllers: [JobMatchingController],
   providers: [AdzunaAdapter, TheMuseAdapter, AIRerankerService, JobMatchingService, SimpleEmbeddingService],
 })

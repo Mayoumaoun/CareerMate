@@ -55,7 +55,7 @@ export class AIRerankerService {
   private static readonly APPROX_CHARS_PER_TOKEN = 4;
   private static readonly MIN_JOB_COUNT = 3;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   async rerank(input: AIRankingInput): Promise<AIRankResult[]> {
     const llmConfig = this.getRuntimeConfig();
@@ -113,7 +113,7 @@ export class AIRerankerService {
       this.configService.get<string>('LLM_ENDPOINT')?.trim() ||
       '/chat/completions';
     const model =
-      this.configService.get<string>('LLM_MODEL')?.trim() || 'gpt-4.1-mini';
+      this.configService.get<string>('LLM_MODEL')?.trim() || 'openai/gpt-oss-20b:free';
     const apiKey = this.configService.get<string>('LLM_API_KEY')?.trim();
     const apiKeyHeader =
       this.configService.get<string>('LLM_API_KEY_HEADER')?.trim() ||
@@ -143,7 +143,7 @@ export class AIRerankerService {
       (aggressive ? 12000 : 22000);
     const maxJobs =
       this.configService.get<number>('LLM_MAX_RERANK_JOBS') ??
-      (aggressive ? 8 : 25);
+      (aggressive ? 8 : 20);
     const maxProfileChars =
       this.configService.get<number>('LLM_MAX_PROFILE_CHARS') ??
       (aggressive ? 2000 : 5000);
@@ -473,8 +473,8 @@ export class AIRerankerService {
 
     const confidenceLevel =
       item.confidenceLevel === 'high' ||
-      item.confidenceLevel === 'medium' ||
-      item.confidenceLevel === 'low'
+        item.confidenceLevel === 'medium' ||
+        item.confidenceLevel === 'low'
         ? item.confidenceLevel
         : 'low';
 
@@ -483,13 +483,13 @@ export class AIRerankerService {
       matchScore: Number(boundedScore.toFixed(2)),
       missingSkills: Array.isArray(item.missingSkills)
         ? item.missingSkills
-            .filter((entry): entry is string => typeof entry === 'string')
-            .slice(0, 20)
+          .filter((entry): entry is string => typeof entry === 'string')
+          .slice(0, 20)
         : [],
       improvementTips: Array.isArray(item.improvementTips)
         ? item.improvementTips
-            .filter((entry): entry is string => typeof entry === 'string')
-            .slice(0, 20)
+          .filter((entry): entry is string => typeof entry === 'string')
+          .slice(0, 20)
         : [],
       confidenceLevel,
       explanation: typeof item.explanation === 'string' ? item.explanation : '',

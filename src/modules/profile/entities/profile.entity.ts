@@ -26,20 +26,20 @@ export class ProfileEntity {
     updatedAt: Date;
     @DeleteDateColumn({nullable: true})
     deletedAt: Date | null;
-    @Column()
-    firstName: string;
-    @Column()
-    lastName: string;
-    @Column()
-    phone: string;
-    @Column()
-    country: string;
-    @Column()
-    city: string;
-    @Column({type: 'date'})
-    birthdate: Date;
-    @Column({type: 'enum', enum: Gender})
-    gender: Gender;
+    @Column({ nullable: true })
+    firstName: string | null;
+    @Column({ nullable: true })
+    lastName: string | null;
+    @Column({ nullable: true })
+    phone: string | null;
+    @Column({ nullable: true })
+    country: string | null;
+    @Column({ nullable: true })
+    city: string | null;
+    @Column({type: 'date', nullable: true})
+    birthdate: Date | null;
+    @Column({type: 'enum', enum: Gender, nullable: true})
+    gender: Gender | null;
 
     @Column({ type: 'jsonb' })
     skills: jsonSchemas.SkillItem[];

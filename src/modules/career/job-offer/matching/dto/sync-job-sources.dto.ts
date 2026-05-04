@@ -1,11 +1,7 @@
-import { IsArray, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { JobSource } from '../job-matching.types';
 
 export class SyncJobSourcesDto {
-  @IsOptional()
-  @IsString()
-  userId?: string;
-
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -22,6 +18,6 @@ export class SyncJobSourcesDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsEnum(['adzuna', 'themuse'], { each: true })
   sources?: JobSource[];
 }

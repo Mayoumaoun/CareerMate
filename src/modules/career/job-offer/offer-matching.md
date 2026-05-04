@@ -19,34 +19,38 @@ The database repositories used by the service are:
 
 ### 1) Sync job sources for a user
 
-`POST /job-matching/users/:userId/sources/sync`
+`POST /job-matching/sources/sync`
 
 Request body (`SyncJobSourcesDto`, all optional):
 
 - `keywords?: string[]`
 - `location?: string`
 - `limitPerSource?: number` (default: `25`)
-- `sources?: ('adzuna' | 'themuse')[]`
+- `sources?: ('adzuna' | 'themuse')[]` (enum-validated)
 
 Route behavior:
 
-- `userId` is always forced from the URL path, then passed to `syncJobSources`.
+- **Requires JWT authentication.** User ID is extracted from the JWT token, not from the URL.
+- If token is missing or invalid, returns `401 Unauthorized`.
 
 ### 2) Match jobs for a user
 
-`POST /job-matching/users/:userId/match`
+`POST /job-matching/match`
 
 Request body (`RunJobMatchingDto`, all optional):
 
 - `limit?: number` (default return size: `15`)
 - `shortlistSize?: number` (service cap: `25`, DTO minimum validation: `5`)
-- `sources?: ('adzuna' | 'themuse')[]`
+- `sources?: ('adzuna' | 'themuse')[]` (enum-validated)
+
+**Requires JWT authentication.** User ID is extracted from the JWT token, not from the URL.
 
 ## Execution Flow: Source Sync
 
-Below is the exact runtime path for `POST /job-matching/users/:userId/sources/sync`.
+Below is the exact runtime path for `POST /job-matching/sources/sync`.
 
-1. Controller forwards request to `JobMatchingService.syncJobSources` with `userId` from route.
+1. Global `JwtAuthGuard` validates token and extracts `userId`.
+2. Controller forwards request to `JobMatchingService.syncJobSources` with `userId` from JWT.
 2. Service calls `withProfileSeed(...)` because `userId` is present.
 3. `withProfileSeed` loads user with profile relation:
 	- if profile does not exist, throws `NotFoundException('Profile not found for this user.')`.
@@ -73,9 +77,10 @@ Below is the exact runtime path for `POST /job-matching/users/:userId/sources/sy
 
 ## Execution Flow: Matching
 
-Below is the exact runtime path for `POST /job-matching/users/:userId/match`.
+Below is the exact runtime path for `POST /job-matching/match`.
 
-1. Controller calls `JobMatchingService.matchUser(userId, dto)`.
+1. Global `JwtAuthGuard` validates token and extracts `userId`.
+2. Controller calls `JobMatchingService.matchUser(userId, dto)`.
 2. Service loads user with relations `profile` and `profile.projects`.
 3. If profile missing, throws `NotFoundException('Profile not found for this user.')`.
 4. Service builds profile snapshot with:
@@ -203,12 +208,98 @@ Each item in `matches`:
 
 ## Key Source Files
 
-- `src/modules/matching/job-matching.module.ts`
-- `src/modules/matching/job-matching.controller.ts`
-- `src/modules/matching/job-matching.service.ts`
-- `src/modules/matching/ai-reranker.service.ts`
-- `src/modules/matching/simple-embedding.service.ts`
-- `src/modules/matching/adapters/adzuna.adapter.ts`
-- `src/modules/matching/adapters/themuse.adapter.ts`
+- `src/modules/career/job-offer/matching/job-matching.module.ts`
+- `src/modules/career/job-offer/matching/job-matching.controller.ts`
+- `src/modules/career/job-offer/matching/job-matching.service.ts`
+- `src/modules/career/job-offer/matching/ai-reranker.service.ts`
+- `src/modules/career/job-offer/matching/simple-embedding.service.ts`
+- `src/modules/career/job-offer/matching/adapters/adzuna.adapter.ts`
+- `src/modules/career/job-offer/matching/adapters/themuse.adapter.ts`
 - `src/modules/career/job-offer/job-offer.entity.ts`
 - `src/modules/profile/entities/profile.entity.ts`
+
+## Postman Testing Guide
+
+### Prerequisites
+
+1. Start the API: `npm run start:dev`
+2. Have a valid JWT token from `/auth/signin` or `/auth/google`
+3. Database must be running with a user record and associated profile
+
+### Setup in Postman
+
+1. **Create a collection** for job matching tests
+2. **Add Authorization header manually** to each request (Postman variable or Bearer token):
+   - Header: `Authorization: Bearer <your-jwt-token>`
+3. Alternative: Use Postman's Bearer Token auth tab
+
+### Test 1: Sync Job Sources
+
+**Request:**
+```
+POST http://localhost:3000/job-matching/sources/sync
+Content-Type: application/json
+Authorization: Bearer <jwt-token>
+
+```
+
+
+### Test 2: Match Jobs
+
+**Request:**
+```
+POST http://localhost:3000/job-matching/match
+Content-Type: application/json
+Authorization: Bearer <jwt-token>
+
+
+```
+
+**Expected Response:**
+```json
+{
+  "userId": "<user-id>",
+  "scannedJobs": 42,
+  "shortlistedJobs": 20,
+  "aiEnabled": true,
+  "aiRankingsCount": 3,
+  "aiMatchedCount": 3,
+  "matches": [
+    {
+      "jobId": "<id>",
+      "title": "Senior Backend Engineer",
+      "company": "TechCorp",
+      "location": "Paris",
+      "remote": true,
+      "contractType": "CDI",
+      "url": "https://...",
+      "source": "adzuna",
+      "semanticScore": 87.5,
+      "matchScore": 92,
+      "missingSkills": ["Kubernetes"],
+      "improvementTips": ["Learn container orchestration"],
+      "confidenceLevel": "high",
+      "explanation": "Great fit..."
+    }
+  ]
+}
+
+```
+
+### LLM Prompt Budget Variables
+
+| Variable | Current Value | Code Default (normal / aggressive) | Floor | Used By | Purpose |
+|----------|--------------|-------------------------------------|-------|---------|---------|
+| `LLM_MAX_INPUT_TOKENS` | `2000` | `22000` / `12000` | `2000` | `AIRerankerService.getPromptBudgetConfig()` | **Maximum estimated input token budget.** Multiplied by `APPROX_CHARS_PER_TOKEN` (4) to get the max prompt character count. The budgeted prompt builder iteratively trims jobs, descriptions, and profile text until the prompt fits. |
+| `LLM_MAX_PROFILE_CHARS` | `2000` | `5000` / `2000` | `500` | `AIRerankerService.getPromptBudgetConfig()` | Maximum characters of the candidate's profile text to include in the prompt. Profile text is truncated to this length before the budget loop begins. |
+| `LLM_MAX_JOB_DESCRIPTION_CHARS` | `500` | `1200` / `400` | `150` | `AIRerankerService.getPromptBudgetConfig()` | Maximum characters per job description in the prompt. Each job's `description` field is truncated to this value. The budget loop may reduce this further (by 20% per iteration, floor 150). |
+| `LLM_MAX_RERANK_JOBS` | *(not set)* | `20` / `8` | `3` | `AIRerankerService.getPromptBudgetConfig()` | Maximum number of jobs to include in the prompt (before budget trimming). The budget loop may further reduce this (by 2 per iteration, floor 3). |
+
+
+### Job Matching Pipeline Variables
+
+| Variable | Current Value | Code Default | Floor | Used By | Purpose |
+|----------|--------------|-------------|-------|---------|---------|
+| `JOB_MATCHING_SCAN_LIMIT` | `200` | `200` | `50` | `JobMatchingService.matchUser()` | Maximum number of job offers loaded from the database (via `take: scanLimit`). Jobs are sorted by `postedAt DESC`, so this effectively means "scan the 200 most recent jobs." |
+| `JOB_MATCHING_DEFAULT_SHORTLIST_SIZE` | `10` | `6` | `5` | `JobMatchingService.matchUser()` | Default number of top-scoring jobs (by cosine similarity) sent to the AI reranker when the client doesn't specify `shortlistSize`. |
+| `JOB_MATCHING_MAX_SHORTLIST_SIZE` | `20` | `10` | *equals default* | `JobMatchingService.matchUser()` | Upper bound for `shortlistSize`. Even if the client requests more, this caps it. The code enforces `maxShortlistSize ≥ defaultShortlistSize`. |
