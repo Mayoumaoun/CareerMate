@@ -1,0 +1,531 @@
+### Profile API Examples - Progressive Profile Creation (Step 1-8)
+### Copy and paste these into a .http file or use REST Client extension
+### All routes require authentication (JWT token in Authorization header)
+
+@baseUrl = http://localhost:3000/api
+@token = your_jwt_token_here
+
+###
+### ========== STEP 1️⃣: CREATE PROFILE WITH STEP 1 ONLY ==========
+### Créer le profil avec Étape 1 (infos persos)
+### ✅ REQUIRED: Numéro de téléphone tunisien
+###
+POST {{baseUrl}}/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "step1": {
+    "firstName": "MOEZ",
+    "lastName": "Ben Mohamed",
+    "phone": "+21625123456",
+    "country": "Tunisia",
+    "city": "Tunis",
+    "dateOfBirth": "1998-05-15",
+    "gender": "male",
+    "email": "ahmed@example.com",
+    "address": "123 Avenue de la Liberté",
+    "zipCode": "1001"
+  },
+  "bio": "Je suis un développeur passionné par les technologies web et mobile"
+}
+
+###
+### ========== STEP 2️⃣: UPDATE STEP 2 - EDUCATION ==========
+### Ajouter l'éducation (Step 2)
+###
+PUT {{baseUrl}}/profile/step/2
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userLevel": "Junior",
+  "education": [
+    {
+      "degree": "Licence Informatique",
+      "institution": "Université de Tunis",
+      "field": "Computer Science",
+      "startDate": "2020-09-01",
+      "endDate": "2023-06-30",
+      "location": "Tunis"
+    },
+    {
+      "degree": "Master Développement Web",
+      "institution": "ESI",
+      "field": "Web Development",
+      "startDate": "2023-09-01",
+      "endDate": "2025-06-30",
+      "location": "Tunis"
+    }
+  ]
+}
+
+###
+### ========== STEP 3️⃣: UPDATE STEP 3 - SKILLS ==========
+### Ajouter les compétences (Step 3)
+### ✅ MINIMUM: 3 compétences requises
+###
+PUT {{baseUrl}}/profile/step/3
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "skills": [
+    {
+      "name": "React",
+      "level": "advanced"
+    },
+    {
+      "name": "Node.js",
+      "level": "intermediate"
+    },
+    {
+      "name": "TypeScript",
+      "level": "intermediate"
+    },
+    {
+      "name": "PostgreSQL",
+      "level": "intermediate"
+    },
+    {
+      "name": "Docker",
+      "level": "beginner"
+    }
+  ]
+}
+
+###
+### ========== STEP 4️⃣: UPDATE STEP 4 - EXPERIENCES ==========
+### Ajouter les expériences professionnelles (Step 4)
+###
+PUT {{baseUrl}}/profile/step/4
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "experiences": [
+    {
+      "title": "Développeur Frontend",
+      "company": "StartUp Tech",
+      "location": "Tunis",
+      "startDate": "2023-07-01",
+      "endDate": "2024-12-31",
+      "description": "Développement d'applications React, intégration API REST, gestion état avec Redux"
+    },
+    {
+      "title": "Développeur Full Stack Freelance",
+      "company": "Freelance",
+      "location": "Remote",
+      "startDate": "2024-01-01",
+      "endDate": "2025-04-05",
+      "description": "Création de sites e-commerce, applications MERN, consultation technique"
+    }
+  ]
+}
+
+###
+### ========== STEP 5️⃣: UPDATE STEP 5 - PROJECTS ==========
+### Ajouter les projets (Step 5)
+###
+PUT {{baseUrl}}/profile/step/5
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "projects": [
+    {
+      "title": "E-Commerce Platform",
+      "context": "Projet personnel",
+      "description": "Plateforme e-commerce complète avec React, Node.js et MongoDB. Intégration Stripe pour paiements",
+      "techStack": ["React", "Node.js", "MongoDB", "Stripe"],
+      "projectUrl": "https://github.com/ahmed/ecommerce",
+      "date": "2024-06-15"
+    },
+    {
+      "title": "Task Management App",
+      "context": "Projet freelance",
+      "description": "Application de gestion de tâches avec collaboration temps réel et notifications",
+      "techStack": ["React", "Express", "PostgreSQL", "Socket.io"],
+      "projectUrl": "https://task-app.example.com",
+      "date": "2024-03-20"
+    },
+    {
+      "title": "AI Chat Bot",
+      "context": "Projet scolaire",
+      "description": "Chatbot IA utilisant OpenAI API intégré dans une application web",
+      "techStack": ["React", "Node.js", "OpenAI API", "Redis"],
+      "projectUrl": "https://github.com/ahmed/chatbot",
+      "date": "2024-01-10"
+    }
+  ]
+}
+
+###
+### ========== STEP 6️⃣: UPDATE STEP 6 - LANGUAGES ==========
+### Ajouter les langues (Step 6)
+###
+PUT {{baseUrl}}/profile/step/6
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "languages": [
+    {
+      "name": "Arabe",
+      "level": "native"
+    },
+    {
+      "name": "Français",
+      "level": "fluent"
+    },
+    {
+      "name": "Anglais",
+      "level": "advanced"
+    }
+  ]
+}
+
+###
+### ========== STEP 7️⃣: UPDATE STEP 7 - CERTIFICATIONS ==========
+### Ajouter les certifications (Step 7)
+###
+PUT {{baseUrl}}/profile/step/7
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "certifications": [
+    {
+      "name": "React Developer Certification",
+      "date": "2024-03-15",
+      "organization": "Udemy",
+      "context": "Online course",
+      "domain": "Frontend",
+      "url": "https://udemy.com/react-cert"
+    },
+    {
+      "name": "AWS Solutions Architect Associate",
+      "date": "2024-06-20",
+      "organization": "Amazon Web Services",
+      "context": "Professional certification",
+      "domain": "Cloud",
+      "url": "https://aws.amazon.com/certification"
+    },
+    {
+      "name": "SCRUM Master Certification",
+      "date": "2024-02-10",
+      "organization": "Scrum.org",
+      "context": "Professional certification",
+      "domain": "Project Management",
+      "url": "https://www.scrum.org"
+    }
+  ]
+}
+
+###
+### ========== STEP 8️⃣: UPDATE STEP 8 - TARGET PROFILE (FINAL STEP) ==========
+### Ajouter le profil cible / objectifs de carrière (Step 8 - ÉTAPE FINALE)
+###
+PUT {{baseUrl}}/profile/step/8
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "shortTermObjective": "Devenir Senior Developer dans une startup tech innovante",
+  "longTermObjective": "Créer ma propre entreprise de développement logiciel",
+  "targetPositions": [
+    "Senior Full Stack Developer",
+    "Technical Lead",
+    "Engineering Manager"
+  ],
+  "sectorPreferences": [
+    {
+      "name": "Technology",
+      "interest": "very_interested",
+      "weight": 5
+    },
+    {
+      "name": "Fintech",
+      "interest": "very_interested",
+      "weight": 4
+    },
+    {
+      "name": "E-Commerce",
+      "interest": "somewhat_interested",
+      "weight": 3
+    }
+  ],
+  "minSalary": 50000,
+  "maxSalary": 100000,
+  "salaryType": "gross",
+  "contractTypes": [
+    {
+      "type": "cdi",
+      "preferred": true
+    },
+    {
+      "type": "freelance",
+      "preferred": false
+    }
+  ],
+  "targetCities": [
+    "Tunis",
+    "Paris",
+    "Berlin"
+  ],
+  "remotePreference": {
+    "type": "hybrid",
+    "hybridDays": 3
+  },
+  "availability": "immediate"
+}
+
+###
+### ========== GET PROFILE ==========
+### Récupérer le profil complet avec toutes les étapes
+###
+GET {{baseUrl}}/profile
+Authorization: Bearer {{token}}
+
+###
+### ========== GET PROFILE SUMMARY ==========
+### Récupérer le résumé du profil avec score et pourcentage de complétude
+###
+GET {{baseUrl}}/profile/summary
+Authorization: Bearer {{token}}
+
+###
+### ========== MODIFY STEP 1 (Exemple: Changer de ville) ==========
+### Modifier l'étape 1 (par exemple, changer la ville)
+###
+PUT {{baseUrl}}/profile/step/1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "Ahmed",
+  "lastName": "Ben Mohamed",
+  "phone": "+21625123456",
+  "country": "France",
+  "city": "Paris",
+  "dateOfBirth": "1998-05-15",
+  "gender": "male",
+  "email": "ahmed@example.com",
+  "address": "456 Rue de la Paix",
+  "zipCode": "75001"
+}
+
+###
+### ========== ADD MORE SKILLS (Exemple: Étendre les compétences) ==========
+### Ajouter plus de compétences ou mises à jour
+###
+PUT {{baseUrl}}/profile/step/3
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "skills": [
+    {
+      "name": "React",
+      "category": "frontend",
+      "level": "advanced"
+    },
+    {
+      "name": "Node.js",
+      "category": "backend",
+      "level": "advanced"
+    },
+    {
+      "name": "TypeScript",
+      "category": "language",
+      "level": "advanced"
+    },
+    {
+      "name": "PostgreSQL",
+      "category": "database",
+      "level": "advanced"
+    },
+    {
+      "name": "Docker",
+      "category": "devops",
+      "level": "intermediate"
+    },
+    {
+      "name": "Kubernetes",
+      "category": "devops",
+      "level": "beginner"
+    },
+    {
+      "name": "GraphQL",
+      "category": "backend",
+      "level": "intermediate"
+    }
+  ]
+}
+
+###
+### ========== UPDATE TARGET PROFILE (Modifier étape 8) ==========
+### Modifier le profil cible si nécessaire
+###
+PUT {{baseUrl}}/profile/step/8
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "shortTermObjective": "Devenir Tech Lead dans une grande entreprise tech",
+  "longTermObjective": "Créer un SaaS rentable",
+  "targetPositions": [
+    "Tech Lead",
+    "Senior Architect",
+    "CTO"
+  ],
+  "minSalary": 80000,
+  "maxSalary": 150000,
+  "salaryType": "gross",
+  "availability": "3 months"
+}
+
+###
+### ========== ❌ INVALID EXAMPLES (ERROR TEST) ==========
+### Ces exemples vont échouer - for testing
+
+###
+### ❌ ERREUR: Numéro téléphone invalide (non tunisien)
+###
+POST {{baseUrl}}/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "step1": {
+    "firstName": "Test",
+    "lastName": "User",
+    "phone": "+33612345678",
+    "country": "France",
+    "city": "Paris",
+    "dateOfBirth": "1998-01-01",
+    "gender": "male",
+    "email": "test@example.com",
+    "address": "123 Rue Test",
+    "zipCode": "75001"
+  }
+}
+
+###
+### ❌ ERREUR: Moins de 3 compétences (minimum requis)
+###
+PUT {{baseUrl}}/profile/step/3
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "skills": [
+    {
+      "name": "React",
+      "category": "frontend",
+      "level": "intermediate"
+    }
+  ]
+}
+
+###
+### ❌ ERREUR: Dates incohérentes (fin avant début)
+###
+PUT {{baseUrl}}/profile/step/4
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "experiences": [
+    {
+      "title": "Developer",
+      "company": "Company",
+      "location": "Tunis",
+      "startDate": "2023-12-31",
+      "endDate": "2023-01-01",
+      "description": "Invalid date range"
+    }
+  ]
+}
+
+###
+### ❌ ERREUR: Utilisateur trop jeune (moins de 18 ans)
+###
+POST {{baseUrl}}/profile
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "step1": {
+    "firstName": "Young",
+    "lastName": "Person",
+    "phone": "+21625123456",
+    "country": "Tunisia",
+    "city": "Tunis",
+    "dateOfBirth": "2010-05-15",
+    "gender": "male",
+    "email": "young@example.com",
+    "address": "123 Rue Test",
+    "zipCode": "1001"
+  }
+}
+
+###
+### ========== NOTES ==========
+### 
+### 1. Remplacez {{token}} par votre vrai token JWT
+### 2. Phone: doit être un numéro tunisien valide +216
+###    Format valide: /^(?:\+216|00216|0)?[245679]\d{7,8}$/
+###    Exemples valides:
+###    - +21625123456
+###    - +21698765432
+###    - 00216 25 123 456
+###    - 0 25 123 456
+### 3. Dates: format ISO (YYYY-MM-DD)
+### 4. Âge minimum: 18 ans
+### 5. Compétences: minimum 3 requises
+### 
+### ========== FLUX RECOMMANDÉ ==========
+### 
+### 1. POST /profile (step1)
+###    ↓
+### 2. PUT /profile/step/2 (éducation)
+###    ↓
+### 3. PUT /profile/step/3 (compétences) - min 3
+###    ↓
+### 4. PUT /profile/step/4 (expériences)
+###    ↓
+### 5. PUT /profile/step/5 (projets)
+###    ↓
+### 6. PUT /profile/step/6 (langues)
+###    ↓
+### 7. PUT /profile/step/7 (certifications)
+###    ↓
+### 8. PUT /profile/step/8 (profil cible - ÉTAPE FINALE)
+###    ↓
+### 9. GET /profile (voir résultat final)
+###    ↓
+### 10. GET /profile/summary (voir score et statistiques)
+###
+### ========== VALIDATION RULES ==========
+###
+### Step 1 (Personal Info):
+###   - Age: minimum 18 years
+###   - Phone: Tunisian number only (+216, 00216, or 0 prefix)
+###   - Email: valid format
+###
+### Step 3 (Skills):
+###   - Minimum 3 skills required
+###   - No duplicate skills
+###   - Levels: beginner, intermediate, advanced, expert
+###
+### Step 4 (Experiences):
+###   - End date must be >= start date
+###   - Description required
+###
+### Step 8 (Target Profile):
+###   - Salary: minSalary < maxSalary
+###   - Remote type: if "hybrid", hybridDays required (1-5)
+###   - Availability: must be valid enum
+###   - All fields are optional (entirely skippable step)
+###

@@ -11,6 +11,7 @@ import { PresenceModule } from './modules/presence/presence.module';
 import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { JobMatchingModule } from './modules/career/job-offer/matching/job-matching.module';
+import { RedisModule } from './common/redis/redis.module';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -78,7 +79,7 @@ function getNumberConfig(
         synchronize: !isProduction,
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, JobMatchingModule, ProfileModule, PreferencesModule, PresenceModule, UserModule
+    CareerModule, AuthModule, DiscoveryModule, JobMatchingModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,8 +1,9 @@
 import * as jsonSchemas from "src/common/types/json-schemas";
 import { UserEntity } from "src/modules/user/entities/user.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { CvEntity } from "./cv.entity";
+import { CvEntity } from "../../cv/cv.entity";
 import { ProjectEntity } from "./projet.entity";
+import { Gender } from "src/modules/user/enums/gender.enum";
 
 enum UserLevel {
     Senior = "Senior",
@@ -25,6 +26,20 @@ export class ProfileEntity {
     updatedAt: Date;
     @DeleteDateColumn({nullable: true})
     deletedAt: Date | null;
+    @Column()
+    firstName: string;
+    @Column()
+    lastName: string;
+    @Column()
+    phone: string;
+    @Column()
+    country: string;
+    @Column()
+    city: string;
+    @Column({type: 'date'})
+    birthdate: Date;
+    @Column({type: 'enum', enum: Gender})
+    gender: Gender;
 
     @Column({ type: 'jsonb' })
     skills: jsonSchemas.SkillItem[];
@@ -32,8 +47,8 @@ export class ProfileEntity {
     @Column({ type: 'jsonb' })
     experiences: jsonSchemas.ExperienceItem[];
 
-    @Column({ type: 'jsonb' })
-    targetPosition: jsonSchemas.TargetPosition;
+    @Column({ type: 'jsonb', nullable: true })
+    targetPosition: jsonSchemas.TargetPosition | null;
 
     @Column({ type: 'jsonb' })
     education: jsonSchemas.EducationItem[];
@@ -46,19 +61,23 @@ export class ProfileEntity {
 
     @Column({ type: 'jsonb', nullable: true })
     profileVector: number[] | null;
+  
+    @Column({type: 'text', nullable: true})
+    shortTermGoals: string | null;
 
-    @Column({type: 'text'})
-    shortTermGoals: string;
-    @Column({type: 'text'})
-    longTermGoals: string;
+    @Column({type: 'text', nullable: true})
+    longTermGoals: string | null;
 
     @OneToOne(() => UserEntity, (user: UserEntity) => user.profile)
     @JoinColumn()
     user: UserEntity;
 
+    @Column({ type: 'jsonb', nullable: true })
+    targetProfile: Record<string, any> | null;
+
     @OneToMany(() => CvEntity, (cv: CvEntity) => cv.profile)
     cvs: CvEntity[];
-
+    
     @OneToMany(() => ProjectEntity, (project: ProjectEntity) => project.profile)
     projects: ProjectEntity[];
 }

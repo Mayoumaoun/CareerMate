@@ -18,8 +18,8 @@ export class ProjectEntity {
     techStack: string[];
     @Column({type: 'text'})
     projectUrl: string;
-    @Column({type: 'text'})
-    imageUrl: string;
+    @Column({type: 'text', nullable: true})
+    imageUrl: string | null;
     @CreateDateColumn()
     createdAt: Date;
     @UpdateDateColumn()
@@ -27,7 +27,7 @@ export class ProjectEntity {
     @DeleteDateColumn({nullable: true})
     deletedAt: Date | null;
 
-    @ManyToOne(() => ProfileEntity, (profile: ProfileEntity) => profile.projects)
-    @JoinColumn()
+    @ManyToOne(() => ProfileEntity, (profile: ProfileEntity) => profile.projects, { nullable: false })
+    @JoinColumn({ name: 'profileId' })
     profile: ProfileEntity;
 }

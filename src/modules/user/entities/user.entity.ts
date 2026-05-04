@@ -10,12 +10,6 @@ import { PostEntity } from "src/modules/presence/post/post.entity";
 import { ProfileEntity } from "src/modules/profile/entities/profile.entity";
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 
-enum Gender {
-    Female = "Female",
-    Male = "Male",
-    Other = "Other",
-}
-
 @Entity("user")
 export class UserEntity {
     @PrimaryGeneratedColumn('uuid')
@@ -23,6 +17,9 @@ export class UserEntity {
 
     @Column({ unique: true })
     email: string;
+
+    @Column({ unique: true })
+    username: string;
 
     @Column()
     passwordHash: string;
@@ -35,21 +32,6 @@ export class UserEntity {
 
     @DeleteDateColumn({nullable: true})
     deletedAt: Date | null;
-
-    @Column()
-    firstName: string;
-    @Column()
-    lastName: string;
-    @Column()
-    phone: string;
-    @Column()
-    country: string;
-    @Column()
-    city: string;
-    @Column({type: 'date'})
-    birthdate: Date;
-    @Column({type: 'enum', enum: Gender})
-    gender: Gender;
 
     @OneToMany(()=> LettreMotivationEntity, (lettreMotivation: LettreMotivationEntity)=> lettreMotivation.user )
     lettresMotivation: LettreMotivationEntity[];
