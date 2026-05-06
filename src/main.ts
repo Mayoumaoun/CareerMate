@@ -2,6 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { CreateTargetJobRoadmapDto } from './modules/career/roadmap/dto/CreateTargetJobRoadmap.dto';
+import { CreateJobOfferRoadmapDto } from './modules/career/roadmap/dto/CreateJobOfferRoadmap.dto';
+import { CreateGenericRoadmapDto } from './modules/career/roadmap/dto/CreateGenericRoadmap.dto';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,7 +18,12 @@ async function bootstrap() {
     .addBearerAuth()
     .addTag('career-mate')
     .build();
-  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  const documentFactory = () => SwaggerModule.createDocument(app, config, {
+  extraModels: [
+    CreateTargetJobRoadmapDto,
+    CreateJobOfferRoadmapDto,
+    CreateGenericRoadmapDto,
+  ],}); 
   SwaggerModule.setup('api', app, documentFactory);
   await app.listen(process.env.PORT ?? 3000);
 }

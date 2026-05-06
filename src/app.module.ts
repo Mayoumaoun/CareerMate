@@ -11,6 +11,7 @@ import { PresenceModule } from './modules/presence/presence.module';
 import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { RedisModule } from './common/redis/redis.module';
+import { RoadmapModule } from './modules/career/roadmap/roadmap.module';
 
 @Module({
   imports: [
@@ -32,7 +33,7 @@ import { RedisModule } from './common/redis/redis.module';
         synchronize: process.env.NODE_ENV === 'development',
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule
+    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule, RoadmapModule
   ],
   controllers: [AppController],
   providers: [AppService],
