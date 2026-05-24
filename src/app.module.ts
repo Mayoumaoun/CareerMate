@@ -70,6 +70,8 @@ function getNumberConfig(
 
   throw new Error(`Missing required configuration value: ${key}`);
 }
+import { SimulationType } from './modules/career/simulation/entities/simulation.entity';
+import { SimulationModule } from './modules/career/simulation/entretien.module';
 
 @Module({
   imports: [
@@ -93,10 +95,9 @@ function getNumberConfig(
         database: getStringConfig(configService, 'DB_NAME', 'careermate'),
         autoLoadEntities: true,
         synchronize: !isProduction,
-      })
+        dropSchema: false,
+      }),
     }),
-    JobMatchingModule,
-    CandidatureModule,
     RedisModule,
     CareerModule,
     AuthModule,
@@ -107,6 +108,8 @@ function getNumberConfig(
     UserModule,
     CvModule,
     LettreMotivationModule,
+    JobOfferEntity,
+    SimulationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

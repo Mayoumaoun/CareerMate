@@ -25,15 +25,11 @@ export class LettreMotivationController {;
 
   @Post('generate')
   generate(@Body() dto: GenerateLettreMotivationDto, @Req() req) {
-    // const TEST_USER_ID = '33333333-3333-3333-3333-333333333333';
-    // return this.lettreMotivationService.generate(TEST_USER_ID, dto);
     return this.lettreMotivationService.generate(req.user.id, dto);
   }
 
   @Get()
   findAll(@Req() req) {
-    // const TEST_USER_ID = '33333333-3333-3333-3333-333333333333';
-    // return this.lettreMotivationService.findAll(TEST_USER_ID);
     return this.lettreMotivationService.findAll(req.user.id);
   }
 
@@ -43,22 +39,16 @@ export class LettreMotivationController {;
     @Body() dto: FeedbackDto,
     @Req() req,
   ) {
-    // const TEST_USER_ID = '33333333-3333-3333-3333-333333333333';
-    // return this.lettreMotivationService.addFeedback(id, TEST_USER_ID, dto);
     return this.lettreMotivationService.addFeedback(id, req.user.id, dto);
   }
 
   @Get(':id')
   findOne(@Param('id', new ParseUUIDPipe()) id: string, @Req() req) {
-    // const TEST_USER_ID = '33333333-3333-3333-3333-333333333333';
-    // return this.lettreMotivationService.findOne(id, TEST_USER_ID);
     return this.lettreMotivationService.findOne(id, req.user.id);
   }
 
   @Delete(':id')
   remove(@Param('id', new ParseUUIDPipe()) id: string, @Req() req) {
-    // const TEST_USER_ID = '33333333-3333-3333-3333-333333333333';
-    // return this.lettreMotivationService.remove(id, TEST_USER_ID);
     return this.lettreMotivationService.remove(id, req.user.id);
   }
 
@@ -67,15 +57,6 @@ export class LettreMotivationController {;
     const lettre = await this.lettreMotivationService.findOne(id, req.user.id);
 
     const profile = await this.lettreMotivationService.getProfile(req.user.id);
-    // const TEST_USER_ID = '33333333-3333-3333-3333-333333333333';
-    //     const lettre = await this.lettreMotivationService.findOne(
-    //       id,
-    //       TEST_USER_ID
-    //     );
-    //     const profile = await this.lettreMotivationService.getProfile(
-    //       TEST_USER_ID
-    //     );
-
     const pdf = await this.pdfExportService.generateCoverLetterPdf(
       lettre.content,
       {
