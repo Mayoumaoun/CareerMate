@@ -3,12 +3,9 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryColumn,
 import { UserEntity } from "src/modules/user/entities/user.entity";
 
 export enum JobOfferStatus {
-  ACTIVE = 'active',
-  EXPIRED = 'expired',
-  CLOSED = 'closed',
-}
-export enum JobOfferStatus {
     ACTIVE = 'ACTIVE',
+    EXPIRED = 'expired',
+    CLOSED = 'closed',
     ARCHIVED = 'ARCHIVED',
     DRAFT = 'DRAFT',
 }

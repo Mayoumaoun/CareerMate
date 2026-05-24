@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import type { File } from 'multer';
 import axios from 'axios';
 import { ImportCVResponseDto } from '../dtos/import-cv.dto';
 
@@ -35,7 +36,7 @@ export class CvParserService implements OnModuleInit {
     console.log(`[CV Parser] Model: ${this.openaiModel}`);
   }
 
-  async extractTextFromPDF(file: Express.Multer.File): Promise<string> {
+  async extractTextFromPDF(file: File): Promise<string> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
@@ -493,7 +494,7 @@ Return only JSON.`;
     return normalized;
   }
 
-  async importCV(file: Express.Multer.File): Promise<ImportCVResponseDto> {
+  async importCV(file: File): Promise<ImportCVResponseDto> {
     console.log(`[CV Parser] 📥 File: ${file.originalname} (${(file.size / 1024).toFixed(2)}KB)`);
 
     const cvText = await this.extractTextFromPDF(file);

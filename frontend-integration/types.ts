@@ -277,6 +277,61 @@ export interface ProfileSummaryResponse {
 }
 
 // ============================================
+// JOB OFFERS
+// ============================================
+
+export interface MatchResultDto {
+  jobId: string;
+  title: string;
+  company: string;
+  companyLogo?: string;
+  location: string;
+  remote: boolean;
+  experienceLevel: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  description: string;
+  skills: string[];
+  score: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+}
+
+export interface MatchQueryDto {
+  skills?: string[];
+  location?: string[];
+  experienceLevel?: string[];
+  salaryMin?: number;
+  salaryMax?: number;
+}
+
+export interface CreateJobOfferDto {
+  title: string;
+  company: string;
+  location: string;
+  remote: boolean;
+  experienceLevel: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  description: string;
+  skills: string[];
+  url?: string;
+}
+
+export interface UpdateJobOfferDto {
+  title?: string;
+  company?: string;
+  location?: string;
+  remote?: boolean;
+  experienceLevel?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  description?: string;
+  skills?: string[];
+  url?: string;
+}
+
+// ============================================
 // ERROR RESPONSE
 // ============================================
 

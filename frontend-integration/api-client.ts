@@ -28,10 +28,14 @@ import {
   Step7CertificationsDto,
   Step8TargetProfileDto,
   ErrorResponse,
+  MatchResultDto,
+  MatchQueryDto,
+  CreateJobOfferDto,
+  UpdateJobOfferDto,
 } from './types';
 
 // Configuration
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 const API_TIMEOUT = 30000; // 30 secondes
 
 // ============================================
@@ -105,7 +109,10 @@ async function request<T>(
     }
 
     if (error instanceof TypeError) {
-      throw new ApiError(0, 'Network error: ' + error.message);
+      throw new ApiError(
+        0,
+        `Network error: Could not reach ${url}. Make sure the backend API is running and accessible.`,
+      );
     }
 
     throw new ApiError(500, 'Unexpected error', { error });
@@ -307,12 +314,101 @@ const profileAPI = {
 };
 
 // ============================================
+// JOB OFFERS API
+// ============================================
+
+const jobOfferAPI = {
+  /**
+   * Récupérer tous les job offers
+   */
+  getAllOffers: async (): Promise<MatchResultDto[]> => {
+    return request<MatchResultDto[]>('/job-offer', {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Récupérer les job offers correspondant au profil de l'utilisateur
+   * avec options de filtrage
+   */
+  getMatches: async (
+    profileId: string,
+    filters?: MatchQueryDto
+  ): Promise<MatchResultDto[]> => {
+    const queryParams = new URLSearchParams();
+    
+    if (filters?.skills?.length) {
+      queryParams.append('skills', JSON.stringify(filters.skills));
+    }
+    if (filters?.location?.length) {
+      queryParams.append('location', JSON.stringify(filters.location));
+    }
+    if (filters?.experienceLevel?.length) {
+      queryParams.append('experienceLevel', JSON.stringify(filters.experienceLevel));
+    }
+    if (filters?.salaryMin) {
+      queryParams.append('salaryMin', String(filters.salaryMin));
+    }
+    if (filters?.salaryMax) {
+      queryParams.append('salaryMax', String(filters.salaryMax));
+    }
+
+    const queryString = queryParams.toString();
+    const url = queryString ? `/job-offer/${profileId}?${queryString}` : `/job-offer/${profileId}`;
+
+    return request<MatchResultDto[]>(url, {
+      method: 'GET',
+    });
+  },
+
+  /**
+   * Créer un nouveau job offer
+   */
+  create: async (
+    token: string,
+    payload: CreateJobOfferDto
+  ): Promise<MatchResultDto> => {
+    return request<MatchResultDto>('/job-offer', {
+      method: 'POST',
+      token,
+      body: payload,
+    });
+  },
+
+  /**
+   * Mettre à jour un job offer
+   */
+  update: async (
+    token: string,
+    jobId: string,
+    payload: UpdateJobOfferDto
+  ): Promise<MatchResultDto> => {
+    return request<MatchResultDto>(`/job-offer/${jobId}`, {
+      method: 'PATCH',
+      token,
+      body: payload,
+    });
+  },
+
+  /**
+   * Supprimer un job offer
+   */
+  delete: async (token: string, jobId: string): Promise<void> => {
+    return request<void>(`/job-offer/${jobId}`, {
+      method: 'DELETE',
+      token,
+    });
+  },
+};
+
+// ============================================
 // MAIN API EXPORT
 // ============================================
 
 export const careerMateAPI = {
   auth: authAPI,
   profile: profileAPI,
+  jobOffer: jobOfferAPI,
 };
 
 export { ApiError };
