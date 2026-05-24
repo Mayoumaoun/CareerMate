@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "resolvePackageJsonExports": true,
+     "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "5.0",
+    "baseUrl": "./",
     "esModuleInterop": true,
     "isolatedModules": true,
     "declaration": true,
@@ -27,3 +28,9 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test", "front"]
 }
+
+
+
+
+
+

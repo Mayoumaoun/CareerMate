@@ -13,6 +13,10 @@ import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { JobMatchingModule } from './modules/career/job-offer/matching/job-matching.module';
 import { CandidatureModule } from './modules/career/candidature/candidature.module';
 import { RedisModule } from './common/redis/redis.module';
+import { AuthController } from './modules/auth/auth.controller';
+import { CvModule } from './modules/cv/cv.module';
+import { LettreMotivationModule } from './modules/career/lettre-motivation/lettre-motivation.module';
+import { JobOfferEntity } from './modules/career/job-offer/job-offer.entity';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -92,7 +96,9 @@ function getNumberConfig(
         synchronize: !isProduction,
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, JobMatchingModule, CandidatureModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule,
+    JobMatchingModule, CandidatureModule,RedisModule,
+    CareerModule, AuthModule, DiscoveryModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, CvModule, LettreMotivationModule,
+    JobOfferEntity
   ],
   controllers: [AppController],
   providers: [AppService],
