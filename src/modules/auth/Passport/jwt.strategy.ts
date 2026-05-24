@@ -6,9 +6,15 @@ import { ExtractJwt, Strategy } from "passport-jwt";
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy){
     constructor(private readonly configService: ConfigService){
+        const secret = configService.get<string>('JWT_TOKEN_SIGN_IN')?.trim();
+        if (!secret) {
+            throw new Error(
+                'JWT_TOKEN_SIGN_IN is missing. Set it in .env or .env.developement (see .env.example).',
+            );
+        }
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrKey: configService.get<string>('JWT_TOKEN_SIGN_IN')?? '',
+            secretOrKey: secret,
             // secretOrKeyProvider: async (request, rawJwtToken, done) => {
             //     const secret = configService.get<string>('JWT_TOKEN_SIGN_IN');
             //     done(null, secret);

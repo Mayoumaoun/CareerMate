@@ -11,16 +11,27 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => {
-        const host = config.get('REDIS_HOST');
-        const port = config.get('REDIS_PORT');
-        const password = config.get('REDIS_PASSWORD');
-        
-        console.log('Connecting to Redis:', host, port); 
-        
+        const rawHost = config.get<string>('REDIS_HOST');
+        const rawPort = config.get<string | number>('REDIS_PORT');
+        const rawPassword = config.get<string>('REDIS_PASSWORD');
+
+        // If Redis isn't configured, fall back to in-memory cache so the API can boot.
+        if (!rawHost || String(rawHost).trim().length === 0) {
+          return {};
+        }
+
+        const host = String(rawHost).trim();
+        const port = typeof rawPort === 'number' ? rawPort : Number(rawPort ?? 6379);
+        const password = rawPassword && String(rawPassword).trim().length > 0 ? String(rawPassword) : undefined;
+
+        const url = new URL(`redis://${host}:${Number.isFinite(port) ? port : 6379}`);
+        if (password) {
+          url.password = password;
+          url.username = '';
+        }
+
         return {
-          stores: [
-            createKeyv(`redis://:${password}@${host}:${port}`)
-          ]
+          stores: [createKeyv(url.toString())],
         };
       }
     })

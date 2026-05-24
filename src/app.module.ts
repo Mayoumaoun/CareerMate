@@ -11,9 +11,18 @@ import { PresenceModule } from './modules/presence/presence.module';
 import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
 import { JobMatchingModule } from './modules/career/job-offer/matching/job-matching.module';
+import { CandidatureModule } from './modules/career/candidature/candidature.module';
 import { RedisModule } from './common/redis/redis.module';
 
 const isProduction = process.env.NODE_ENV === 'production';
+
+const envFilePath = [
+  '.env',
+  ...(process.env.NODE_ENV ? [`.env.${process.env.NODE_ENV}`] : []),
+  '.env.development',
+  '.env.developement',
+  '.env.local',
+];
 
 function getStringConfig(
   configService: ConfigService,
@@ -63,7 +72,7 @@ function getNumberConfig(
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
+      envFilePath,
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -79,9 +88,14 @@ function getNumberConfig(
         synchronize: !isProduction,
       })
     }),
-    CareerModule, AuthModule, DiscoveryModule, JobMatchingModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule,
+    CareerModule, AuthModule, DiscoveryModule, JobMatchingModule, CandidatureModule, ProfileModule, PreferencesModule, PresenceModule, UserModule, RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  constructor(private configService: ConfigService) {
+    console.log("DB PASS:", this.configService.get('DB_PASSWORD'));
+  }
+}
+

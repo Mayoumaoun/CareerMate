@@ -17,11 +17,18 @@ import { JwtAuthGuard } from "./guards/jwt-auth.guard";
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService)=> ({
-                secret: configService.get<string>('JWT_TOKEN_SIGN_IN'),
-                signOptions: { expiresIn : '1d'}
-
-            })
+            useFactory: (configService: ConfigService) => {
+                const secret = configService.get<string>('JWT_TOKEN_SIGN_IN')?.trim();
+                if (!secret) {
+                    throw new Error(
+                        'JWT_TOKEN_SIGN_IN is missing. Set it in .env or .env.developement (see .env.example).',
+                    );
+                }
+                return {
+                    secret,
+                    signOptions: { expiresIn: '1d' },
+                };
+            },
             
         })
     ],

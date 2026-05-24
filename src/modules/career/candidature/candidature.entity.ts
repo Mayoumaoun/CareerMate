@@ -4,7 +4,7 @@ import { JobOfferEntity } from "../job-offer/job-offer.entity";
 import { LettreMotivationEntity } from "../lettre-motivation/lettre-motivation.entity";
 import { UserEntity } from "src/modules/user/entities/user.entity";
 
-enum CandidatureStatus {
+export enum CandidatureStatus {
     DRAFT = 'DRAFT',
     SENT = 'SENT',
     INTERVIEW = 'INTERVIEW',
@@ -29,11 +29,12 @@ export class CandidatureEntity {
     @Column({type: 'timestamp', nullable: true})
     deletedAt: Date | null;
     
+    @Column({ type: 'text', default: '' })
     notes: string;
 
-    @OneToOne(()=> CvEntity)
+    @OneToOne(()=> CvEntity, { nullable: true })
     @JoinColumn()
-    cv: CvEntity;
+    cv: CvEntity | null;
 
     @OneToOne(()=> JobOfferEntity)
     @JoinColumn()
