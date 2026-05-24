@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsEnum, IsArray, ValidateNested, IsOptional, IsUrl } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum LanguageLevelEnum {
@@ -9,7 +9,6 @@ export enum LanguageLevelEnum {
   B2 = 'B2',
   C1 = 'C1',
   C2 = 'C2',
-  NATIVE = 'native',
 }
 
 export class LanguageDto {
@@ -37,6 +36,7 @@ export class LanguageDto {
   })
   @IsUrl()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   certificate?: string; // URL du certificat
 }
 

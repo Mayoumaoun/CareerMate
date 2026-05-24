@@ -72,7 +72,11 @@ function getNumberConfig(
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath,
+      envFilePath: [
+        `.env.${process.env.NODE_ENV ?? 'development'}`,
+        '.env.development',
+        '.env',
+      ],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

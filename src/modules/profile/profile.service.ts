@@ -9,6 +9,7 @@ import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import * as jsonSchemas from 'src/common/types/json-schemas';
 import { RedisService } from '../../common/redis/redis.service';
+import { DiplomaDto } from './dtos';
 
 @Injectable()
 export class ProfileService {
@@ -80,7 +81,8 @@ export class ProfileService {
     } as any))
     const profile= await this.redis.getOrSet<ProfileEntity>(`user:${userId}:profile`,getProfile,this.PROFILE_TTL );
     if (!profile) {
-      throw new NotFoundException('Profile not found');
+      //throw new NotFoundException('Profile not found');
+      return null;
     }
 
     return profile;
@@ -92,22 +94,36 @@ export class ProfileService {
     step: number,
     stepData: any,
   ): Promise<any> {
-    const profile = await this.getProfile(userId);
+const profile = await this.profileRepository.findOne({
+  where: { user: { id: userId } },
+});
 
+if (!profile) {
+  throw new BadRequestException(
+    'Profile not created yet. Please create profile first.'
+  );
+}
     switch (step) {
       case 1:
-        //remarque: add other field to be updated
+        // Update all personal info fields
+        profile.firstName = stepData.firstName || profile.firstName;
+        profile.lastName = stepData.lastName || profile.lastName;
+        profile.phone = stepData.phone || profile.phone;
+        profile.country = stepData.country || profile.country;
+        profile.city = stepData.city || profile.city;
+        profile.birthdate = stepData.dateOfBirth || profile.birthdate;
+        profile.gender = stepData.gender || profile.gender;
         profile.bio = stepData.bio || this.generateDefaultBio(stepData);
         break;
       case 2:
         profile.userLevel = stepData.userLevel;
-        const education = stepData.education.map((edu: any) => ({
+        const education = stepData.education.map((edu: DiplomaDto) => ({
           degree: edu.degree,
           institution: edu.institution,
           field: edu.field,
           startDate: edu.startDate,
           endDate: edu.endDate || edu.startDate,
-          location: edu.location || '',
+          location: edu.location,
         }));
         profile.education = education;
         break;
@@ -149,7 +165,8 @@ export class ProfileService {
         break;
       case 8:
         // Step 8: Target Profile (optional final step)
-        profile.targetProfile = stepData || null;
+        profile.targetProfile =
+          stepData && Object.keys(stepData).length > 0 ? stepData : null;
         break;
       default:
         throw new BadRequestException(`Invalid step number: ${step}`);
@@ -160,7 +177,6 @@ export class ProfileService {
     return this.profileRepository.save(profile);
   }
 
-  
   
   async updateProjects(userId: string, newProjectsData: any[]): Promise<void> {
   const profile = await this.getProfile(userId);
@@ -226,6 +242,7 @@ export class ProfileService {
         projects,
         languages: profile.languages,
         certifications: profile.certifications,
+        targetProfile: profile.targetProfile,
         goals: {
           shortTerm: profile.shortTermGoals,
           longTerm: profile.longTermGoals,
@@ -242,6 +259,24 @@ export class ProfileService {
     try {
       const profile = await this.getProfile(userId);
 
+      // Update personal info (Step 1) if provided
+      if (profileData.step1) {
+        profile.firstName = profileData.step1.firstName || profile.firstName;
+        profile.lastName = profileData.step1.lastName || profile.lastName;
+        profile.phone = profileData.step1.phone || profile.phone;
+        profile.country = profileData.step1.country || profile.country;
+        profile.city = profileData.step1.city || profile.city;
+        profile.birthdate = profileData.step1.dateOfBirth || profile.birthdate;
+        profile.gender = profileData.step1.gender || profile.gender;
+      }
+
+      // Update bio if provided
+      if (profileData.bio) {
+        profile.bio = profileData.bio;
+      } else if (profileData.step1) {
+        profile.bio = this.generateDefaultBio(profileData.step1);
+      }
+
       // Update skills if provided
       if (profileData.step3 && profileData.step3.skills) {
         profile.skills = profileData.step3.skills.map(skill => ({
@@ -257,7 +292,8 @@ export class ProfileService {
           institution: edu.institution,
           field: edu.field,
           startDate: edu.startDate,
-          endDate: edu.endDate || edu.startDate,
+          endDate: edu.endDate || edu.startDate,                            
+          location: edu.location,
         })) as jsonSchemas.EducationItem[];
       }
 
@@ -293,13 +329,6 @@ export class ProfileService {
       // Update user level if provided
       if (profileData.step2 && profileData.step2.userLevel) {
         profile.userLevel = profileData.step2.userLevel;
-      }
-
-      // Update bio if provided
-      if (profileData.bio) {
-        profile.bio = profileData.bio;
-      } else if (profileData.step1) {
-        profile.bio = this.generateDefaultBio(profileData.step1);
       }
 
       // Update targetPosition if provided
@@ -376,12 +405,11 @@ export class ProfileService {
       score += 5;
     }
 
-    // Goals (10 points)
+    // Step 8 target profile preferences (10 points)
     if (
-      profile.shortTermGoals &&
-      profile.shortTermGoals.length > 0 &&
-      profile.longTermGoals &&
-      profile.longTermGoals.length > 0
+      profile.targetProfile &&
+      typeof profile.targetProfile === 'object' &&
+      Object.keys(profile.targetProfile).length > 0
     ) {
       score += 10;
     }
@@ -391,7 +419,7 @@ export class ProfileService {
 
   private calculateCompletionPercentage(profile: ProfileEntity): number {
     let completedItems = 0;
-    const totalItems = 7;
+    const totalItems = 8;
 
     // Check each step
     if (profile.bio && profile.bio.length > 0) completedItems++;
@@ -406,6 +434,13 @@ export class ProfileService {
       completedItems++;
     if (Array.isArray(profile.certifications) && profile.certifications.length > 0)
       completedItems++;
+    if (
+      profile.targetProfile &&
+      typeof profile.targetProfile === 'object' &&
+      Object.keys(profile.targetProfile).length > 0
+    ) {
+      completedItems++;
+    }
 
     return Math.round((completedItems / totalItems) * 100);
   }

@@ -1,0 +1,13 @@
+### POST /profile/import-cv
+Imports and parses a CV (PDF) file
+
+> @baseUrl = http://localhost:3000
+> @token = YOUR_JWT_TOKEN_HERE
+
+POST {{baseUrl}}/profile/import-cv
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data
+
+file=@./sample-cv.pdf
+
+###

@@ -6,15 +6,37 @@ import { TargetProfileValidationDto } from '../dtos/target-profile-validation.dt
 @Injectable()
 export class ValidateTargetProfilePipe implements PipeTransform {
   async transform(value: any): Promise<any> {
-    // If no targetProfile is provided, it's optional - skip validation
-    if (!value || !value.targetProfile) {
+    const targetProfileKeys = [
+      'targetPositions',
+      'sectorPreferences',
+      'minSalary',
+      'maxSalary',
+      'salaryType',
+      'contractTypes',
+      'targetCities',
+      'remotePreference',
+      'availability',
+    ];
+
+    const hasDirectTargetProfileShape =
+      value &&
+      typeof value === 'object' &&
+      targetProfileKeys.some((key) => key in value);
+
+    // Support both payload shapes:
+    // 1) { targetProfile: { ... } } (complete profile update)
+    // 2) { ... } (step 8 direct payload)
+    const targetProfilePayload = value?.targetProfile ?? (hasDirectTargetProfileShape ? value : null);
+
+    // If no target profile payload is provided, it's optional - skip validation
+    if (!targetProfilePayload) {
       return value;
     }
 
     // Validate the targetProfile object
     const targetProfileInstance = plainToInstance(
       TargetProfileValidationDto,
-      value.targetProfile,
+      targetProfilePayload,
     );
 
     const errors = await validate(targetProfileInstance);
@@ -33,16 +55,29 @@ export class ValidateTargetProfilePipe implements PipeTransform {
     }
 
     // Additional business logic validations
-    const targetProfile = value.targetProfile;
+    const targetProfile = targetProfilePayload;
+    const hasMinSalary =
+      targetProfile.minSalary !== undefined && targetProfile.minSalary !== null;
+    const hasMaxSalary =
+      targetProfile.maxSalary !== undefined && targetProfile.maxSalary !== null;
+
+    // Validate salary values are not negative
+    if (hasMinSalary && targetProfile.minSalary < 0) {
+      throw new BadRequestException(
+        'Target Profile validation failed: minSalary cannot be negative',
+      );
+    }
+
+    if (hasMaxSalary && targetProfile.maxSalary < 0) {
+      throw new BadRequestException(
+        'Target Profile validation failed: maxSalary cannot be negative',
+      );
+    }
 
     // Validate salary range if both are provided
-    if (
-      targetProfile.minSalary &&
-      targetProfile.maxSalary &&
-      targetProfile.minSalary > targetProfile.maxSalary
-    ) {
+    if (hasMinSalary && hasMaxSalary && targetProfile.minSalary >= targetProfile.maxSalary) {
       throw new BadRequestException(
-        'Target Profile validation failed: minSalary must be less than maxSalary',
+        'Target Profile validation failed: minSalary must be strictly less than maxSalary',
       );
     }
 

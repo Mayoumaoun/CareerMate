@@ -1,5 +1,5 @@
 import { IsString, IsNotEmpty, IsArray, ValidateNested, IsOptional, IsUrl } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CertificationDto {
@@ -50,6 +50,7 @@ export class CertificationDto {
   })
   @IsUrl()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
   url?: string;
 }
 
