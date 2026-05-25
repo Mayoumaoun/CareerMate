@@ -16,8 +16,8 @@ import { Response } from 'express';
 import { EntretienService } from './services/entretien.service';
 import { CreateEntretienDto } from './dto/create-entretien.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
-// import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard'
-// @UseGuards(JwtAuthGuard)
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard'
+@UseGuards(JwtAuthGuard)
 @Controller('entretien')
 export class EntretienController {
   constructor(private entretienService: EntretienService) {}
@@ -25,13 +25,14 @@ export class EntretienController {
   // Démarrer un entretien
   @Post('start')
   start(@Req() req, @Body() dto: CreateEntretienDto) {
-    return this.entretienService.start(req.user.id, dto);
+    return this.entretienService.start(req.user.userId, dto);
   }
 
   // Question courante en texte
   @Get(':id/question')
   getCurrentQuestion(@Req() req, @Param('id') id: string) {
-    return this.entretienService.getCurrentQuestion(id, req.user.id);
+    return this.entretienService.getCurrentQuestion(id, req.user.userId);
+
   }
 
   // Question courante en audio (Edge TTS)
@@ -43,7 +44,7 @@ export class EntretienController {
   ) {
     const audio = await this.entretienService.getCurrentQuestionAudio(
       id,
-      req.user.id,
+      req.user.userId,
     );
     res.setHeader('Content-Type', 'audio/mpeg');
     res.send(audio);
@@ -56,7 +57,7 @@ export class EntretienController {
     @Param('id') id: string,
     @Body() dto: SubmitAnswerDto,
   ) {
-    return this.entretienService.submitAnswer(id, req.user.id, dto);
+    return this.entretienService.submitAnswer(id, req.user.userId, dto);
   }
 
   // Soumettre une réponse audio
@@ -70,7 +71,7 @@ export class EntretienController {
   ) {
     return this.entretienService.submitAudioAnswer(
       id,
-      req.user.id,
+      req.user.userId,
       file.buffer,
       durationSeconds,
     );
@@ -79,19 +80,18 @@ export class EntretienController {
   // Rapport final
   @Get(':id/report')
   getReport(@Req() req, @Param('id') id: string) {
-    return this.entretienService.getReport(id, req.user.id);
+    return this.entretienService.getReport(id, req.user.userId);
   }
 
   // Historique
   @Get()
   findAll(@Req() req) {
-    return this.entretienService.findAll(req.user.id);
+    return this.entretienService.findAll(req.user.userId);
   }
 
   // Supprimer
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {
-      return this.entretienService.remove(id, req.user.id);
-
+      return this.entretienService.remove(id, req.user.userId);
   }
 }
