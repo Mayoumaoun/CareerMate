@@ -16,13 +16,49 @@ import { EntretienAnswerEntity } from '../entities/entretien-answer.entity';
 import { JobOfferEntity } from '../../job-offer/job-offer.entity';
 import { ProfileEntity } from '../../../profile/entities/profile.entity';
 import { QuestionGeneratorService } from './question-generator.service';
-import { AnswerEvaluatorService } from './answer-evaluator.service';
+import {
+  AnswerEvaluatorService,
+  QuestionType,
+} from './answer-evaluator.service';
 import { ReportGeneratorService } from './report-generator.service';
 import { SpeechService } from './speech.service';
 import { CreateEntretienDto } from '../dto/create-entretien.dto';
 import { SubmitAnswerDto } from '../dto/submit-answer.dto';
 import { SimulationMode } from '../entities/simulation.entity';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
+
+const questionTypeMaps: Record<EntretienType, Record<number, QuestionType>> = {
+  [EntretienType.TECHNIQUE]: {
+    0: 'ice-breaker',
+    1: 'technical-overview',
+    2: 'technical',
+    3: 'technical',
+    4: 'technical',
+    5: 'technical',
+    6: 'technical-scenario',
+    7: 'closing',
+  },
+  [EntretienType.COMPORTEMENTAL]: {
+    0: 'ice-breaker',
+    1: 'motivation',
+    2: 'behavioral',
+    3: 'behavioral',
+    4: 'behavioral',
+    5: 'behavioral',
+    6: 'culture-fit',
+    7: 'closing',
+  },
+  [EntretienType.MIXTE]: {
+    0: 'ice-breaker',
+    1: 'motivation',
+    2: 'behavioral',
+    3: 'technical',
+    4: 'behavioral',
+    5: 'technical',
+    6: 'situational',
+    7: 'closing',
+  },
+};
 
 @Injectable()
 export class EntretienService {
@@ -37,8 +73,8 @@ export class EntretienService {
     private jobOfferRepo: Repository<JobOfferEntity>,
 
     @InjectRepository(ProfileEntity)
-      private profileRepo: Repository<ProfileEntity>,
-    
+    private profileRepo: Repository<ProfileEntity>,
+
     @InjectRepository(UserEntity)
     private userRepo: Repository<UserEntity>,
 
@@ -49,17 +85,16 @@ export class EntretienService {
   ) {}
 
   async start(userId: string, dto: CreateEntretienDto) {
-    // 1. Récupérer le profil
     const profile = await this.profileRepo.findOne({
       where: { user: { id: userId } },
     });
-      if (!profile) throw new NotFoundException('Profile not found');
+    if (!profile) throw new NotFoundException('Profile not found');
+
     const user = await this.userRepo.findOne({
-    where: { id: userId },
+      where: { id: userId },
     });
     if (!user) throw new NotFoundException('User not found');
 
-    // 2. Résoudre company + position + jobDescription
     let company = dto.company;
     let position = dto.position;
     let jobDescription: string | undefined;
@@ -83,7 +118,6 @@ export class EntretienService {
     const entretienType = dto.entretienType ?? EntretienType.MIXTE;
     const mode = dto.mode ?? SimulationMode.TEXT;
 
-    // 3. Générer les questions
     const questions = await this.questionGenerator.generateQuestions(
       profile,
       company,
@@ -94,7 +128,6 @@ export class EntretienService {
       jobDescription,
     );
 
-    // 4. Créer la session
     const entretien = await this.entretienRepo.save(
       this.entretienRepo.create({
         company,
@@ -110,10 +143,9 @@ export class EntretienService {
         score: null,
         report: null,
         completedAt: null,
-        user: user, 
+        user: user,
       }),
     );
-
 
     return {
       id: entretien.id,
@@ -126,7 +158,6 @@ export class EntretienService {
     };
   }
 
-  // Récupérer la question courante en texte
   async getCurrentQuestion(id: string, userId: string) {
     const entretien = await this.findOne(id, userId);
 
@@ -143,14 +174,12 @@ export class EntretienService {
     };
   }
 
-  // Récupérer la question en audio (Edge TTS)
   async getCurrentQuestionAudio(id: string, userId: string): Promise<Buffer> {
     const entretien = await this.findOne(id, userId);
     const question = entretien.questions[entretien.currentQuestionIndex];
     return this.speechService.synthesize(question, entretien.language);
   }
 
-  // Soumettre une réponse texte
   async submitAnswer(id: string, userId: string, dto: SubmitAnswerDto) {
     const entretien = await this.findOne(id, userId, ['answers']);
 
@@ -160,16 +189,20 @@ export class EntretienService {
 
     const currentQuestion = entretien.questions[entretien.currentQuestionIndex];
 
-    // Évaluer la réponse
+    const questionType: QuestionType =
+      questionTypeMaps[entretien.entretienType]?.[
+        entretien.currentQuestionIndex
+      ] ?? 'behavioral';
+
     const evaluation = await this.answerEvaluator.evaluate(
       currentQuestion,
       dto.answer,
       entretien.position,
       entretien.company,
       entretien.language,
+      questionType,
     );
 
-    // Sauvegarder la réponse
     await this.answerRepo.save(
       this.answerRepo.create({
         questionIndex: entretien.currentQuestionIndex,
@@ -186,11 +219,9 @@ export class EntretienService {
       entretien.currentQuestionIndex >= entretien.questions.length - 1;
 
     if (isLastQuestion) {
-      // Générer le rapport final
       return this.complete(entretien);
     }
 
-    // Passer à la question suivante
     await this.entretienRepo.update(id, {
       currentQuestionIndex: entretien.currentQuestionIndex + 1,
     });
@@ -210,7 +241,6 @@ export class EntretienService {
     };
   }
 
-  // Soumettre une réponse audio
   async submitAudioAnswer(
     id: string,
     userId: string,
@@ -219,20 +249,17 @@ export class EntretienService {
   ) {
     const entretien = await this.findOne(id, userId);
 
-    // Transcrire l'audio
     const transcription = await this.speechService.transcribe(
       audioBuffer,
       entretien.language,
     );
 
-    // Réutiliser submitAnswer avec la transcription
     return this.submitAnswer(id, userId, {
       answer: transcription,
       durationSeconds,
     });
   }
 
-  // Compléter l'entretien et générer le rapport
   private async complete(entretien: EntretienEntity) {
     const answers = await this.answerRepo.find({
       where: { entretien: { id: entretien.id } },
