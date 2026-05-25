@@ -95,7 +95,7 @@ import { SimulationModule } from './modules/career/simulation/entretien.module';
         password: getStringConfig(configService, 'DB_PASSWORD', 'postgres'),
         database: getStringConfig(configService, 'DB_NAME', 'careermate'),
         autoLoadEntities: true,
-        synchronize: !isProduction,
+        synchronize: false,
         dropSchema: false,
       }),
     }),

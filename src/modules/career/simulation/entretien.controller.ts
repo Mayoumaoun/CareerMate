@@ -25,14 +25,13 @@ export class EntretienController {
   // Démarrer un entretien
   @Post('start')
   start(@Req() req, @Body() dto: CreateEntretienDto) {
-    return this.entretienService.start(req.user.userId, dto);
+    return this.entretienService.start(req.user.id, dto);
   }
 
   // Question courante en texte
   @Get(':id/question')
   getCurrentQuestion(@Req() req, @Param('id') id: string) {
-    return this.entretienService.getCurrentQuestion(id, req.user.userId);
-
+    return this.entretienService.getCurrentQuestion(id, req.user.id);
   }
 
   // Question courante en audio (Edge TTS)
@@ -44,7 +43,7 @@ export class EntretienController {
   ) {
     const audio = await this.entretienService.getCurrentQuestionAudio(
       id,
-      req.user.userId,
+      req.user.id,
     );
     res.setHeader('Content-Type', 'audio/mpeg');
     res.send(audio);
@@ -57,7 +56,7 @@ export class EntretienController {
     @Param('id') id: string,
     @Body() dto: SubmitAnswerDto,
   ) {
-    return this.entretienService.submitAnswer(id, req.user.userId, dto);
+    return this.entretienService.submitAnswer(id, req.user.id, dto);
   }
 
   // Soumettre une réponse audio
@@ -71,7 +70,7 @@ export class EntretienController {
   ) {
     return this.entretienService.submitAudioAnswer(
       id,
-      req.user.userId,
+      req.user.id,
       file.buffer,
       durationSeconds,
     );
@@ -80,18 +79,19 @@ export class EntretienController {
   // Rapport final
   @Get(':id/report')
   getReport(@Req() req, @Param('id') id: string) {
-    return this.entretienService.getReport(id, req.user.userId);
+    return this.entretienService.getReport(id, req.user.id);
   }
 
   // Historique
   @Get()
   findAll(@Req() req) {
-    return this.entretienService.findAll(req.user.userId);
+    return this.entretienService.findAll(req.user.id);
   }
 
   // Supprimer
   @Delete(':id')
   remove(@Req() req, @Param('id') id: string) {
-      return this.entretienService.remove(id, req.user.userId);
+      return this.entretienService.remove(id, req.user.id);
+
   }
 }
