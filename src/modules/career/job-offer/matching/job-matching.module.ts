@@ -15,5 +15,6 @@ import { SimpleEmbeddingService } from './simple-embedding.service';
   imports: [TypeOrmModule.forFeature([UserEntity, ProfileEntity, JobOfferEntity]), RedisModule],
   controllers: [JobMatchingController],
   providers: [AdzunaAdapter, TheMuseAdapter, AIRerankerService, JobMatchingService, SimpleEmbeddingService],
+  exports: [JobMatchingService],
 })
 export class JobMatchingModule {}

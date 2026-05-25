@@ -30,7 +30,6 @@ import { Step4ExperiencesDto } from './dtos/step4-experiences.dto';
 import { Step5ProjectsDto } from './dtos/step5-projects.dto';
 import { Step6LanguagesDto } from './dtos/step6-languages.dto';
 import { Step7CertificationsDto } from './dtos/step7-certifications.dto';
-import type { File } from 'multer';
 import { ValidateDatesPipe } from './pipes/validate-dates.pipe';
 import { ValidateSkillsPipe } from './pipes/validate-skills.pipe';
 import { ValidateAgeMinimumPipe } from './pipes/validate-age-minimum.pipe';
@@ -99,7 +98,7 @@ export class ProfileController {
   @Post('import-cv')
   @UseInterceptors(FileInterceptor('file'))
   async importCV(
-    @UploadedFile() file: File,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<ImportCVResponseDto> {
     if (!file) {
       throw new BadRequestException('No file provided');

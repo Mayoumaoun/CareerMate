@@ -47,6 +47,8 @@ export class JobMatchingService {
   }
 
   async syncJobSources(input: { userId?: string; keywords?: string[]; location?: string; limitPerSource?: number; sources?: string[] }): Promise<{ inserted: number; fetched: number }> {
+    this.logger.log(`syncJobSources called with: userId=${input.userId}, keywords=${input.keywords?.join(',')}, location=${input.location}`);
+
     const resolvedInput = input.userId
       ? await this.withProfileSeed({
           ...input,
@@ -59,25 +61,42 @@ export class JobMatchingService {
         };
 
     const selectedAdapters = this.adapters.filter((adapter) => !input.sources?.length || input.sources.includes(adapter.source));
+    this.logger.debug(`Selected ${selectedAdapters.length} adapters: ${selectedAdapters.map((a) => a.source).join(', ')}`);
+
     const keywordList = resolvedInput.keywords ?? [];
     const limitPerSource = resolvedInput.limitPerSource ?? 25;
+
+    this.logger.debug(`Fetching jobs with keywords: ${keywordList.join(', ')}, location: ${resolvedInput.location || 'any'}, limit: ${limitPerSource}`);
 
     const results = await Promise.allSettled(
       selectedAdapters.map((adapter) => adapter.fetchJobs({ keywords: keywordList, location: resolvedInput.location, limit: limitPerSource })),
     );
 
+    const successfulResults = results.filter((r) => r.status === 'fulfilled');
+    const failedResults = results.filter((r) => r.status === 'rejected');
+    
+    if (failedResults.length > 0) {
+      this.logger.warn(`${failedResults.length} adapters failed:`, failedResults.map((r) => (r as PromiseRejectedResult).reason?.message || String(r)));
+    }
+
     const jobs = deduplicateBySourceHash(
       results.flatMap((result) => (result.status === 'fulfilled' ? result.value : [])),
     ).map((job) => this.ensureVector(job));
 
+    this.logger.log(`Fetched and deduplicated ${jobs.length} jobs from ${successfulResults.length} adapters`);
+
     if (!jobs.length) {
+      this.logger.warn('No jobs fetched from any source');
       return { inserted: 0, fetched: 0 };
     }
 
     const existingHashes = new Set((await this.jobOfferRepository.find({ select: ['sourceHash'] })).map((job) => job.sourceHash));
     const freshJobs = jobs.filter((job) => !existingHashes.has(job.sourceHash));
 
+    this.logger.debug(`Found ${freshJobs.length} new jobs (${jobs.length - freshJobs.length} duplicates)`);
+
     if (!freshJobs.length) {
+      this.logger.log('No new jobs to insert (all are duplicates)');
       return { inserted: 0, fetched: jobs.length };
     }
 

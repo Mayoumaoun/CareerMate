@@ -10,6 +10,7 @@ export class MatchResultDto {
   salaryMin?: number;          // "$150k"
   salaryMax?: number;          // "$180k"
   description: string;
+  url: string;
   skills: string[];            // the pill tags shown on card
   score: number;               // the % match shown top right
   matchedSkills: string[];     // for the progress bar color

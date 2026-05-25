@@ -4,6 +4,7 @@ import { MatchResultDto } from './dto/match-result.dto';
 import { MatchQueryDto } from './dto/match-query.dto';
 import { UpdateJobOfferDto } from './dto/update-job-offer.dto';
 import { CreateJobOfferDto } from './dto/create-job-offer.dto';
+import { Public } from 'src/common/decorators/isPublic.decorator';
 
 @Controller('job-offer')
 export class JobOfferController {
@@ -15,11 +16,19 @@ export class JobOfferController {
   }
 
   @Get()
-  findAll() {
-    return this.jobOfferService.findAll();
+  @Public()
+  findAll(@Query() query: MatchQueryDto) {
+    return this.jobOfferService.findAll(query);
+  }
+
+  @Get('debug/status')
+  @Public()
+  async getDebugStatus() {
+    return this.jobOfferService.getDebugStatus();
   }
 
   @Get(':profileId')
+  @Public()
   async getMatches(
     @Param('profileId') profileId: string,
     @Query() query: MatchQueryDto,

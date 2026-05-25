@@ -10,7 +10,6 @@ import {
 import { CvService } from './cv.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
-import type { File } from 'multer';
 import { CvEntity } from './cv.entity';
 import { ApiConsumes, ApiBody, ApiResponse } from '@nestjs/swagger';
 
@@ -29,7 +28,7 @@ export class CvController {
     }
   }
   })
-  async uploadCV(@UploadedFile() file: File) {
+  async uploadCV(@UploadedFile() file: Express.Multer.File) {
     return this.cvService.uploadCV(file);
   }
 
@@ -46,7 +45,7 @@ export class CvController {
     }
   })
   suggestFixes(
-    @UploadedFile() file: File,
+    @UploadedFile() file: Express.Multer.File,
     @Body('jobOffer') jobOffer: string,
   ) {
     return this.cvService.suggestAtsFixes(file, jobOffer);
@@ -69,7 +68,7 @@ export class CvController {
     }
   })
   async optimize(
-    @UploadedFile() file: File,
+    @UploadedFile() file: Express.Multer.File,
     @Body() dto: CvEntity,
     // @Res() res: Response,
   ) {

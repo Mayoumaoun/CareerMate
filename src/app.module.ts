@@ -16,6 +16,7 @@ import { RedisModule } from './common/redis/redis.module';
 import { AuthController } from './modules/auth/auth.controller';
 import { CvModule } from './modules/cv/cv.module';
 import { LettreMotivationModule } from './modules/career/lettre-motivation/lettre-motivation.module';
+import { JobOfferModule } from './modules/career/job-offer/job-offer.module';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -108,7 +109,9 @@ import { SimulationModule } from './modules/career/simulation/entretien.module';
     UserModule,
     CvModule,
     LettreMotivationModule,
-    JobOfferEntity,
+    JobOfferModule,
+    JobMatchingModule,
+    CandidatureModule,
     SimulationModule,
   ],
   controllers: [AppController],

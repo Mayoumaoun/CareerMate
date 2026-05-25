@@ -2,7 +2,6 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { CvEntity } from './cv.entity';
-import type { File } from 'multer';
 
 const pdfParse = require('pdf-parse');
 
@@ -12,7 +11,7 @@ export class CvService {
 
   private readonly PYTHON_SERVICE = 'http://localhost:8000';
 
-  async uploadCV(file: File) {
+  async uploadCV(file: Express.Multer.File) {
     const data = await pdfParse(file.buffer);
     return {
       text: data.text,
@@ -21,7 +20,7 @@ export class CvService {
     };
   }
 
-async suggestAtsFixes(file: File, jobOffer: string) {
+async suggestAtsFixes(file: Express.Multer.File, jobOffer: string) {
   const { text } = await this.uploadCV(file);
   try {
     const response = await firstValueFrom(
@@ -56,7 +55,7 @@ async suggestAtsFixes(file: File, jobOffer: string) {
   //     dto.user_profile ? JSON.parse(dto.user_profile) : {}
   //   );
   // }
-  async optimizeCV(file: File, dto: any) {
+  async optimizeCV(file: Express.Multer.File, dto: any) {
     const { text } = await this.uploadCV(file);
     
     // Handle required_skills as either JSON array string or comma-separated string

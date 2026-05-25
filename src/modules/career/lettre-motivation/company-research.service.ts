@@ -1,27 +1,58 @@
 import { Injectable } from '@nestjs/common';
-import { tavily } from '@tavily/core';
+
+type CompanyResearchResult = {
+  summary: string;
+  sources: string[];
+};
+
+type TavilySearchResult = {
+  content: string;
+  url: string;
+};
 
 @Injectable()
 export class CompanyResearchService {
-  private client = tavily({ apiKey: process.env.TAVILY_API_KEY });
+  private async getClient() {
+    const apiKey = process.env.TAVILY_API_KEY?.trim();
+    if (!apiKey) {
+      return null;
+    }
 
-  async research(company: string, position: string) {
+    try {
+      const { tavily } = await import('@tavily/core');
+      return tavily({ apiKey });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown Tavily error';
+      console.warn(`[CompanyResearch] Tavily unavailable, skipping company research: ${message}`);
+      return null;
+    }
+  }
+
+  async research(company: string, position: string): Promise<CompanyResearchResult> {
+    const client = await this.getClient();
+    if (!client) {
+      return {
+        summary: '',
+        sources: [],
+      };
+    }
+
     const [cultureRes, roleRes, techRes] = await Promise.all([
-      this.client.search(`${company} company culture values work environment`, {
+      client.search(`${company} company culture values work environment`, {
         maxResults: 3,
         searchDepth: 'advanced',
       }),
-      this.client.search(`${company} ${position} team experience`, {
+      client.search(`${company} ${position} team experience`, {
         maxResults: 3,
         searchDepth: 'advanced',
       }),
-      this.client.search(`${company} mission product services`, {
+      client.search(`${company} mission product services`, {
         maxResults: 2,
         searchDepth: 'advanced',
       }),
     ]);
 
-    const all = [...cultureRes.results, ...roleRes.results, ...techRes.results];
+    const all = [...cultureRes.results, ...roleRes.results, ...techRes.results] as TavilySearchResult[];
 
     const filtered = all.filter(
       (r) =>
