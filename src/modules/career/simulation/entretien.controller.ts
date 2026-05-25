@@ -16,8 +16,8 @@ import { Response } from 'express';
 import { EntretienService } from './services/entretien.service';
 import { CreateEntretienDto } from './dto/create-entretien.dto';
 import { SubmitAnswerDto } from './dto/submit-answer.dto';
-// import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard'
-// @UseGuards(JwtAuthGuard)
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard'
+@UseGuards(JwtAuthGuard)
 @Controller('entretien')
 export class EntretienController {
   constructor(private entretienService: EntretienService) {}

@@ -18,7 +18,13 @@ async function bootstrap() {
     .addTag('career-mate')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  app.enableCors({ origin: 'http://localhost:3001' });
+  app.enableCors({
+    origin: '*', 
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
+
   SwaggerModule.setup('api', app, documentFactory);
   await app.listen(process.env.PORT ?? 3001);
   

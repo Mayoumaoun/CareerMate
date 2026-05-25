@@ -34,7 +34,9 @@ export class EntretienAnswerEntity {
   @CreateDateColumn()
   answeredAt: Date;
 
-  @ManyToOne(() => EntretienEntity, (entretien) => entretien.answers)
+  @ManyToOne(() => EntretienEntity, (entretien) => entretien.answers, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   entretien: EntretienEntity;
 }

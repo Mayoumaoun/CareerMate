@@ -307,7 +307,12 @@ export class EntretienService {
   }
 
   async remove(id: string, userId: string) {
-    const entretien = await this.findOne(id, userId);
+    const entretien = await this.findOne(id, userId, ['answers']);
+
+    if (entretien.answers?.length) {
+      await this.answerRepo.remove(entretien.answers);
+    }
+
     await this.entretienRepo.remove(entretien);
     return { message: 'Deleted successfully' };
   }
