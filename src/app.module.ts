@@ -17,6 +17,9 @@ import { AuthController } from './modules/auth/auth.controller';
 import { CvModule } from './modules/cv/cv.module';
 import { LettreMotivationModule } from './modules/career/lettre-motivation/lettre-motivation.module';
 import { JobOfferModule } from './modules/career/job-offer/job-offer.module';
+import { SimulationType } from './modules/career/simulation/entities/simulation.entity';
+import { SimulationModule } from './modules/career/simulation/entretien.module';
+import { RoadmapModule } from './modules/career/roadmap/roadmap.module';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -71,8 +74,7 @@ function getNumberConfig(
 
   throw new Error(`Missing required configuration value: ${key}`);
 }
-import { SimulationType } from './modules/career/simulation/entities/simulation.entity';
-import { SimulationModule } from './modules/career/simulation/entretien.module';
+
 
 @Module({
   imports: [
@@ -95,7 +97,7 @@ import { SimulationModule } from './modules/career/simulation/entretien.module';
         password: getStringConfig(configService, 'DB_PASSWORD', 'postgres'),
         database: getStringConfig(configService, 'DB_NAME', 'careermate'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
         dropSchema: false,
       }),
     }),
@@ -113,6 +115,7 @@ import { SimulationModule } from './modules/career/simulation/entretien.module';
     JobMatchingModule,
     CandidatureModule,
     SimulationModule,
+    RoadmapModule
   ],
   controllers: [AppController],
   providers: [AppService],
