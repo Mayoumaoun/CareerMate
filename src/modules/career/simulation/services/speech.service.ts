@@ -9,12 +9,11 @@ import { EntretienLanguage } from '../entities/entretien.entity';
 export class SpeechService {
   private groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-  // STT — Audio → Texte via Groq Whisper
+
   async transcribe(
     audioBuffer: Buffer,
     language: EntretienLanguage,
   ): Promise<string> {
-    // Sauvegarder temporairement l'audio
     const tmpPath = path.join(os.tmpdir(), `audio_${Date.now()}.webm`);
     fs.writeFileSync(tmpPath, audioBuffer);
 
@@ -31,17 +30,17 @@ export class SpeechService {
     }
   }
 
-  // TTS — Texte → Audio via Edge TTS
-  async synthesize(text: string, language: EntretienLanguage): Promise<Buffer> {
-    const voice =
-      language === EntretienLanguage.FR
-        ? 'fr-FR-DeniseNeural'
-        : 'en-US-JennyNeural';
 
-    // Utiliser edge-tts
+  async synthesize(text: string, language: EntretienLanguage): Promise<Buffer> {
+    const isFR = language === EntretienLanguage.FR;
+
+    const voice = isFR
+      ? 'fr-FR-VivienneMultilingualNeural'
+      : 'en-US-EmmaMultilingualNeural';
+
     const { MsEdgeTTS, OUTPUT_FORMAT } = await import('msedge-tts');
     const tts = new MsEdgeTTS();
-    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
 
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
