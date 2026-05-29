@@ -62,8 +62,12 @@ ${jobSection}
 - Perform a gap analysis between the candidate's current skills and what the target role requires.
 - Each step covers one week. Group related topics together logically.
 - For each step, provide 2-4 concrete learning resources (courses, articles, projects, practice).
-- Prefer free resources when possible. Include platform names.
+- Prefer free resources when possible. Include platform names. Include links when available.
 - Skills listed per step must be specific and actionable (not just "learn JavaScript" — say "async/await, Promise chaining, error handling").
+- For each action detail what should be learned.
+- Provide a concise practice section for each step with a task or hands-on activity.
+- If applicable, a mini project or task for each step with what could be delivered.
+- Address the candidate as You.
 
 ## Output format
 Respond ONLY with a valid JSON array. No preamble, no explanation, no markdown fences.
@@ -73,8 +77,9 @@ Schema for each element:
   "id": "<uuid-v4>",
   "weekNumber": <number>,
   "title": "<short step title>",
-  "description": "<2-3 sentences describing what the candidate will learn and why it matters>",
+  "description": "<3-4 sentences describing what the candidate will learn and why it matters>",
   "skills": ["skill1", "skill2"],
+  "practice": "<a task or a project along with 1-2 sentences for explanation>",
   "resources": [
     {
       "type": "course" | "article" | "project" | "practice" | "video",

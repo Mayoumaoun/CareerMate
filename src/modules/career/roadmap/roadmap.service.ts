@@ -422,10 +422,14 @@ export class RoadmapService {
       const clean = text.replace(/```json|```/g, '').trim();
       const steps: RoadmapStep[] = JSON.parse(clean);
 
-      return steps.map((step) => ({
-        ...step,
-        id: step.id ?? uuidv4(),
-      }));
+      return steps.map((step) => {
+        const anyStep = step as any;
+        return {
+          ...step,
+          practice: anyStep.practice ?? anyStep['to practice'] ?? anyStep.toPractice ?? undefined,
+          id: step.id ?? uuidv4(),
+        } as RoadmapStep;
+      });
     } catch {
       throw new BadRequestException(
         'AI returned malformed roadmap data. Please try again.',

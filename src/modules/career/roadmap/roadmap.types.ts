@@ -17,9 +17,10 @@ export interface RoadmapStep {
   description: string;
   skills: string[];
   resources: RoadmapResource[];
+  practice?: string;
   status: StepStatus;
   completedAt?: Date | null;
-  notes?: string;            
+  notes?: string;
 }
 
 export interface GenerationParams {

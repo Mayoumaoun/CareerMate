@@ -119,6 +119,7 @@ export class EntretienService {
       id: entretien.id,
       company,
       position,
+      mode,
       totalQuestions: questions.length,
       currentQuestion: questions[0],
       currentQuestionIndex: 0,
