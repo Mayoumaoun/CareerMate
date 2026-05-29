@@ -9,11 +9,13 @@ import { JwtStrategy } from "./Passport/jwt.strategy";
 import { APP_GUARD } from "@nestjs/core";
 import { GoogleOAuthStrategy } from "./Passport/googleOAuth.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
+import { ProfileModule } from "../profile/profile.module";
 
 @Module({
     imports: [
         UserModule,
         PassportModule,
+        ProfileModule,
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],

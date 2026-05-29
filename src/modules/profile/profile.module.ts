@@ -15,7 +15,7 @@ import { ValidateSkillsPipe } from "./pipes/validate-skills.pipe";
 import { CvModule } from "../cv/cv.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity]), AuthModule, ConfigModule,CvModule],
+    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity]), ConfigModule,CvModule],
     providers: [ProfileService, CvParserService, ValidateAgeMinimumPipe, ValidateDatesPipe, ValidateSkillsPipe],
     controllers: [ProfileController],
     exports: [ProfileService]

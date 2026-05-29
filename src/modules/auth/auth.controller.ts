@@ -1,3 +1,4 @@
+import { UserService } from './../user/user.service';
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../user/dto/create-user.dto';
@@ -6,10 +7,11 @@ import { Public } from 'src/common/decorators/isPublic.decorator';
 import { use } from 'passport';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { ConfigService } from '@nestjs/config';
+import { ProfileService } from '../profile/profile.service';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService, private readonly configService: ConfigService){}
+    constructor(private readonly authService: AuthService, private readonly configService: ConfigService, private readonly userService: UserService ,private readonly profileService: ProfileService){}
 
     @Public()
     @Post('signup')
@@ -28,13 +30,30 @@ export class AuthController {
     @Get('google')
     async googleAuth(){}
 
-    @Public()
-    @UseGuards(GoogleAuthGuard)
-    @Get('google/callback')
-    async googleCallback(@Req() req, @Res() res){
-        const tokens=await this.authService.jwtLogin(req.user);
-        const frontUrl=await this.configService.get<string>('FRONTEND_URL');
-        res.redirect(`${frontUrl}/auth?token=${tokens.access_token}`);
-    }
+ @Public()
+@UseGuards(GoogleAuthGuard)
+@Get('google/callback')
+async googleCallback(@Req() req, @Res() res) {
+  const userFromGoogle = req.user;
 
+  // 1. chercher user
+  let user = await this.userService.findOneByCriteria(
+    "email",
+    userFromGoogle.email
+  );
+
+
+  //  vérifier si profil existe
+  const profile = await this.profileService.getProfile(user.id);
+
+  const tokens = await this.authService.jwtLogin(user);
+
+  const frontUrl = this.configService.get<string>('FRONTEND_URL');
+
+const redirectUrl = `${frontUrl}/auth/callback?token=${tokens.access_token}&next=${
+  profile ? 'dashboard' : 'onboarding'
+}`;
+
+return res.redirect(redirectUrl);
+}
 }
