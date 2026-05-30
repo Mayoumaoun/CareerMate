@@ -51,7 +51,7 @@ async googleCallback(@Req() req, @Res() res) {
 
   const frontUrl = this.configService.get<string>('FRONTEND_URL');
 
-const redirectUrl = `${frontUrl}/auth/callback?token=${tokens.access_token}&next=${
+const redirectUrl = `${frontUrl}/auth/callback?access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}&next=${
   profile ? 'dashboard' : 'onboarding'
 }`;
 
