@@ -37,19 +37,10 @@ export class ProfileService {
         throw new NotFoundException('User not found');
       }
 
-      const existingProfile = await this.profileRepository.findOne({
-        where: { user: { id: userId } },
-      });
-
-      if (existingProfile) {
-        throw new BadRequestException(
-          'This user already has a profile. Use PUT /profile or the step update endpoints to edit it, or create Amine with a different user account.',
-        );
-      }
-
       // Progressive approach: Create profile with ONLY step1
       // Other steps will be added via PUT /profile/step/X
       const profileData_obj: any = {
+        
         bio: profileData.bio || this.generateDefaultBio(profileData.step1),
         userLevel: 'Junior', // Default level (will be updated in step2)
         skills: [],
@@ -462,5 +453,4 @@ if (!profile) {
       userLevel: profile.userLevel,
     };
   }
-
 }
