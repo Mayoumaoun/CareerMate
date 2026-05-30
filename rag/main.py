@@ -9,6 +9,8 @@ from fastapi.responses import StreamingResponse
 import os
 import json
 import re
+import io
+import traceback
 
 load_dotenv()
 
@@ -16,18 +18,7 @@ app = FastAPI()
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
-class OptimizeRequest(BaseModel):
-    cv_text: str
-    jd_text: str
-    required_skills: list[str] = []
-    user_profile: dict = {}
-
-# just for testing
-@app.get("/health")
-def health():
-    return {"status": "ok", "chunks_loaded": True}
-
-
+# helper functions
 def extract_personal_info(cv_text: str) -> dict:
     info = {}
     
@@ -43,9 +34,9 @@ def extract_personal_info(cv_text: str) -> dict:
 
     # LinkedIn
     linkedin = re.search(
-        r'(?:linkedin\.com\s*/\s*in\s*/\s*([\w-]+)|'   # full URL
-        r'linkedin[:\s]+([\w/.-]+)|'                    # label: handle
-        r'([\w-]+)-LinkedIn)',                           # handle-LinkedIn format
+        r'(?:linkedin\.com\s*/\s*in\s*/\s*([\w-]+)|' # full URL
+        r'linkedin[:\s]+([\w/.-]+)|'                 # label: handle
+        r'([\w-]+)-LinkedIn)',                       # handle-LinkedIn format
         cv_text, re.I
     )
     if linkedin:
@@ -57,9 +48,9 @@ def extract_personal_info(cv_text: str) -> dict:
 
     # GitHub
     github = re.search(
-        r'(?:github\.com\s*/\s*([\w-]+)|'              # full URL
-        r'github[:\s]+([\w/.-]+)|'                     # label: handle
-        r'([\w-]+)-GitHub)',                            # handle-GitHub format
+        r'(?:github\.com\s*/\s*([\w-]+)|'   # full URL
+        r'github[:\s]+([\w/.-]+)|'          # label: handle
+        r'([\w-]+)-GitHub)',                # handle-GitHub format
         cv_text, re.I
     )
     if github:
@@ -73,17 +64,39 @@ def extract_personal_info(cv_text: str) -> dict:
     lines = [l.strip() for l in cv_text.split('\n') if l.strip()]
     info['name'] = lines[0] if lines else ''
     
-    # # DEBUG-temporary
+    # # DEBUG-temporary might be used ultèrieurement 
     # print(f"[extract_personal_info] raw cv snippet:\n{cv_text[:500]}")
     # print(f"[extract_personal_info] extracted: {info}")
 
     return info 
 
+# just for testing
+@app.get("/health")
+def health():
+    return {"status": "ok", "chunks_loaded": True}
+
+
+class OptimizeRequest(BaseModel):
+    cv_text: str
+    jd_text: str
+    required_skills: list[str] = []
+    user_profile: dict = {}
 
 class SuggestFixesRequest(BaseModel):
     cv_text: str
     jd_text: str
     required_skills: list[str] = []
+
+class GeneratePdfRequest(BaseModel):
+    optimized_cv: dict
+    candidate_name: str = "Candidate"
+    personal_info: dict = {}
+
+class GenerateFromProfileRequest(BaseModel):
+    profile: dict
+    job_title: str = ""
+    job_description: str = ""
+
 @app.post("/suggest-fixes")
 async def suggest_fixes(req: SuggestFixesRequest):
     
@@ -137,14 +150,13 @@ Return ONLY valid JSON:
         "analysis": analysis
     }
 
-
 @app.post("/optimize")
 async def optimize(req: OptimizeRequest):
 
-    # STEP 1: ATS score before optimization
+    # ATS score before optimization
     ats_before = calculate_ats_score(req.cv_text, req.jd_text, req.required_skills)
 
-    # STEP 2: Domain mismatch guard
+    # STEP 2: Domain mismatch guard <3
     if ats_before["total"] < 15 and len(req.required_skills) > 3:
         return {
             "error": "domain_mismatch",
@@ -261,15 +273,10 @@ CLASSIFICATION RULES (strictly follow):
         "personal_info": personal_info,
         #THOSE ARE DEBUGING RETURNS ONLY;mayybe will do another non public /optimize/debug to return those ultèrieurement ; but now ok => TODO
         # "ats_before": ats_before["total"],
-        # "ats_after": ats_after["total"],
+        "ats_after": ats_after["total"],
         # "ats_details": ats_before,
         # "rag_examples_used": len(similar_chunks)
     }
-
-class GeneratePdfRequest(BaseModel):
-    optimized_cv: dict
-    candidate_name: str = "Candidate"
-    personal_info: dict = {}
 
 
 @app.post("/generate-pdf")
@@ -285,14 +292,13 @@ async def generate_pdf(req: GeneratePdfRequest):
     - certifications: Certifications
     - languages: Languages spoken
     - projects: Projects completed
-    - remaining_gaps: Skills to develop
-    """
+    - associations: Club memberships, volunteering, etc.
+    - qualities: Personal qualities to highlight"""
     print("PERSONAL INFO RECEIVED:", req.personal_info)
     try:
         generator = CVPDFGenerator(candidate_name=req.candidate_name,personal_info=req.personal_info)
         pdf_bytes = generator.generate(req.optimized_cv)
         
-        import io
         buffer = io.BytesIO(pdf_bytes)
         
         return StreamingResponse(
@@ -301,11 +307,95 @@ async def generate_pdf(req: GeneratePdfRequest):
             headers={"Content-Disposition": f'attachment; filename="cv-optimized.pdf"'}
         )
     except Exception as e:
-        import traceback
         error_msg = traceback.format_exc()
         print(f"PDF Generation Error:\n{error_msg}")
         raise HTTPException(
             status_code=500,
             detail=f"PDF generation failed: {str(e)}"
         )
+
+@app.post("/generate-from-profile")
+async def generate_from_profile(req: GenerateFromProfileRequest):
     
+    profile = req.profile
+    job_title = req.job_title
+    job_description = req.job_description
+
+    prompt = f"""You are an expert CV writer. Generate a complete, professional CV from this user profile.
+
+STRICT RULE: Only use information present in the profile below. Do not invent anything.
+
+USER PROFILE:
+{json.dumps(profile, indent=2, default=str)[:3000]}
+
+TARGET POSITION: {job_title or "General professional CV"}
+
+JOB DESCRIPTION (if provided, tailor CV to match these requirements):
+{job_description[:600] if job_description else "Not provided — generate a general CV"}
+
+Generate a CV that:
+1. If a job description was provided, highlights the most relevant skills and experiences that match it
+2. Rewrites experience bullets to be impactful and action-oriented
+3. Includes all education, certifications, languages from the profile
+4. Adds a strong professional summary based on bio + goals + target position
+
+Return ONLY valid JSON with this structure:
+{{
+  "summary": "professional summary paragraph",
+  "skills": ["skill1", "skill2"],
+  "education": [
+    {{ "degree": "...", "institution": "...", "period": "..." }}
+  ],
+  "experiences": [
+    {{
+      "type": "internship",
+      "title": "job title",
+      "company": "company name",
+      "period": "...",
+      "bullets": ["achievement 1", "achievement 2"]
+    }}
+  ],
+  "projects": [
+    {{
+      "name": "project name",
+      "tech": ["tech1", "tech2"],
+      "bullets": ["what it does", "your contribution"]
+    }}
+  ],
+  "certifications": [
+    {{ "name": "...", "issuer": "...", "date": "..." }}
+  ],
+  "languages": [
+    {{ "language": "French", "level": "C1" }}
+  ],
+  "qualities": ["quality1", "quality2"]
+}}"""
+
+    try:
+        response = groq_client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        raw = response.choices[0].message.content
+        
+        # Try to find and parse JSON more robustly
+        json_match = re.search(r'\{', raw)
+        if not json_match:
+            raise ValueError("No JSON found in response")
+        
+        # Start from first { and try to parse
+        start_idx = json_match.start()
+        decoder = json.JSONDecoder()
+        try:
+            generated, idx = decoder.raw_decode(raw[start_idx:])
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON: {str(e)}")
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")
+
+    return {
+        "generated_cv": generated,
+        "profile_name": profile.get("name", ""),
+    }

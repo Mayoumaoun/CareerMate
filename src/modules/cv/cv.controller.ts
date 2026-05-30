@@ -1,6 +1,8 @@
 import {
   Controller,
   Post,
+  Get, 
+  Param,
   UseInterceptors,
   UploadedFile,
   Body,
@@ -63,23 +65,30 @@ export class CvController {
         file: { type: 'string', format: 'binary' },
         jd_text: { type: 'string' },
         required_skills: { type: 'string', description: 'JSON array e.g. ["Python","Docker"]' },
-        user_profile: { type: 'string', description: 'JSON object' }
+        user_profile: { type: 'string', description: 'JSON object' },
+        profileId: { type: 'string', description: 'UUID of the user profile for saving CV' }
       }
     }
   })
+
   async optimize(
     @UploadedFile() file: Express.Multer.File,
-    @Body() dto: CvEntity,
+    @Body() dto: any,
     // @Res() res: Response,
   ) {
+    console.log('🔍 Optimize endpoint called with:', { profileId: dto.profileId, hasFile: !!file, jdLength: dto.jd_text?.length });
+    
+    if (!dto.profileId) {
+      console.warn('⚠️  WARNING: profileId is missing from request body');
+    }
+    
     // const pdf = await this.cvService.optimizeCV(file, dto);
     // res.set({
     //   'Content-Type': 'application/pdf',
     //   'Content-Disposition': 'attachment; filename="cv-optimized.pdf"',
     // });
     // res.send(pdf);
-    return this.cvService.optimizeCV(file, dto);
-
+    return this.cvService.optimizeCV(file, dto, dto.profileId);
   }
 
   // @Post('generate')
@@ -145,20 +154,56 @@ async generatePdf(@Body() dto: any, @Res() res: Response) {
   });
   res.end(pdfBuffer);
 }
+
+// Add these to cv.controller.ts
+
+@Post('generate-from-profile')
+@ApiBody({
+  schema: {
+    type: 'object',
+    properties: {
+      profileId: { type: 'string', description: 'UUID of the user profile' },
+      jobTitle: { type: 'string', description: 'Optional target job title' },
+      jobDescription: { type: 'string', description: 'Optional full job description for targeted CV' },
+      force: { type: 'boolean', description: 'Generate even if profile is incomplete (default: false)' }
+    },
+    required: ['profileId']
+  }
+})
+async generateFromProfile(@Body() dto: { profileId: string; jobTitle?: string; jobDescription?: string; force?: boolean }) {
+  if (!dto.profileId || typeof dto.profileId !== 'string') {
+    throw new Error('profileId must be a valid string');
+  }
+  
+  // Validate UUID format (36 chars: 8-4-4-4-12 hex digits with hyphens)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(dto.profileId)) {
+    throw new Error('profileId must be a valid UUID format (e.g., 550e8400-e29b-41d4-a716-446655440000). Your UUID appears to be incomplete or malformed.');
+  }
+  
+  return this.cvService.generateFromProfile(dto.profileId, dto.jobTitle, dto.jobDescription, dto.force ?? false);
 }
 
+@Get('my-cvs/:profileId')
+async getUserCvs(@Param('profileId') profileId: string) {
+  // Validate UUID format
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(profileId)) {
+    throw new Error('profileId must be a valid UUID format');
+  }
+  return this.cvService.getUserCvs(profileId);
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+@Get(':id/:profileId')
+async getCvById(
+  @Param('id') id: string,
+  @Param('profileId') profileId: string
+) {
+  // Validate UUID format for both parameters
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(id) || !uuidRegex.test(profileId)) {
+    throw new Error('Both id and profileId must be valid UUID format');
+  }
+  return this.cvService.getCvById(id, profileId);
+}
+}

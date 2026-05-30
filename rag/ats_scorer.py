@@ -60,8 +60,6 @@ def calculate_ats_score(cv_text: str, jd_text: str, required_skills: list[str]) 
         "semantic_raw": round(semantic_raw, 3)
     }
 
-
-
 # same just for testing
 if __name__ == "__main__":
     import json
