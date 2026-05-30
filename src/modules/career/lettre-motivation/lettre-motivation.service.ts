@@ -31,10 +31,10 @@ export class LettreMotivationService {
 
     private companyResearch: CompanyResearchService,
     private promptBuilder: PromptBuilderService,
-  ) {}
+  ) { }
 
   async generate(userId: string, dto: GenerateLettreMotivationDto) {
-    
+
     const profile = await this.profileService.getProfile(userId);
     if (!profile) throw new NotFoundException('Profile not found');
 

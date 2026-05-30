@@ -73,10 +73,10 @@ export class JobNormalizerService implements OnModuleInit {
     const uniqueJobs: RawJobOffer[] = [];
 
     for (const job of rawJobs) {
-      const sourceHash = this.generateId(job.title, job.company);
-      if (!uniqueIds.has(sourceHash)) {
-        uniqueIds.add(sourceHash);
-        (job as any).sourceHash = sourceHash;
+      const id = this.generateId(job.title, job.company);
+      if (!uniqueIds.has(id)) {
+        uniqueIds.add(id);
+        (job as any).id = id;
         uniqueJobs.push(job);
       }
     }
@@ -86,10 +86,10 @@ export class JobNormalizerService implements OnModuleInit {
 
     for (const job of uniqueJobs) {
       try {
-        const sourceHash = (job as any).sourceHash;
+        const id = (job as any).id;
 
         // Skip if already in DB
-        const exists = await this.jobOfferRepository.findBySourceHash(sourceHash);
+        const exists = await this.jobOfferRepository.findById(id);
         if (exists) {
           continue;
         }
@@ -113,7 +113,7 @@ export class JobNormalizerService implements OnModuleInit {
           url: job.url,
           source: job.source,
           sourceMetadata: job.sourceMetadata,
-          sourceHash,
+          id,
           vector,
         });
 
@@ -138,9 +138,9 @@ export class JobNormalizerService implements OnModuleInit {
     const jobs = [];
 
     for (const job of rawJobs) {
-      const sourceHash = this.generateId(job.title, job.company);
-      if (!uniqueIds.has(sourceHash)) {
-        uniqueIds.add(sourceHash);
+      const id = this.generateId(job.title, job.company);
+      if (!uniqueIds.has(id)) {
+        uniqueIds.add(id);
 
         try {
           const textToEmbed = this.prepareTextForEmbedding(job);
@@ -149,7 +149,7 @@ export class JobNormalizerService implements OnModuleInit {
 
           jobs.push({
             ...job,
-            sourceHash,
+            id,
             vector,
           });
         } catch (err) {

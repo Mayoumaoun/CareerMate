@@ -12,7 +12,7 @@ export class JSearchAdapter implements JobSourceAdapter {
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async fetchJobs(queries: string[], location: string): Promise<RawJobOffer[]> {
     const allJobs: RawJobOffer[] = [];
@@ -39,7 +39,7 @@ export class JSearchAdapter implements JobSourceAdapter {
               num_pages: '1',
               date_posted: 'month',
             },
-            timeout: 15_000,
+            timeout: 45_000,
           }),
         );
 
@@ -77,7 +77,7 @@ export class JSearchAdapter implements JobSourceAdapter {
         this.logger.error(`Failed to fetch from JSearch for query "${query}": ${error?.message}`);
       }
     }
-    
+
     this.logger.log(`JSearch: fetched ${allJobs.length} unique jobs from ${queries.length} queries`);
     return allJobs;
   }

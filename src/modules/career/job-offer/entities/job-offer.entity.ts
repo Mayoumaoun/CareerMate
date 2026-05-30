@@ -1,5 +1,5 @@
 import * as jsonSchemas from "src/common/types/json-schemas";
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { UserEntity } from "src/modules/user/entities/user.entity";
 
 export enum JobOfferStatus {
@@ -12,7 +12,7 @@ export enum JobOfferStatus {
 
 @Entity("job_offer")
 export class JobOfferEntity {
-    @PrimaryGeneratedColumn('uuid')
+    @PrimaryColumn({ type: 'varchar' })
     id: string;
 
     @Column()
@@ -35,7 +35,7 @@ export class JobOfferEntity {
 
     @Column({ type: 'varchar', nullable: true })
     contractType: string | null;
-    
+
     @Column({ type: 'text' })
     description: string;
 
@@ -49,13 +49,11 @@ export class JobOfferEntity {
     // casting to pgvector format for similarity queries.
     @Column({ type: 'jsonb', nullable: true })
     vector: number[] | null;
-    
+
     @Column()
     url: string;
 
-    @Column({ unique: true })
-    @Index()
-    sourceHash: string;
+
 
     @Column({ type: 'timestamp', nullable: true })
     postedAt: Date | null;

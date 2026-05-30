@@ -37,8 +37,8 @@ export class EntretienService {
     private jobOfferRepo: Repository<JobOfferEntity>,
 
     @InjectRepository(ProfileEntity)
-      private profileRepo: Repository<ProfileEntity>,
-    
+    private profileRepo: Repository<ProfileEntity>,
+
     @InjectRepository(UserEntity)
     private userRepo: Repository<UserEntity>,
 
@@ -46,16 +46,16 @@ export class EntretienService {
     private answerEvaluator: AnswerEvaluatorService,
     private reportGenerator: ReportGeneratorService,
     private speechService: SpeechService,
-  ) {}
+  ) { }
 
   async start(userId: string, dto: CreateEntretienDto) {
     // 1. Récupérer le profil
     const profile = await this.profileRepo.findOne({
       where: { user: { id: userId } },
     });
-      if (!profile) throw new NotFoundException('Profile not found');
+    if (!profile) throw new NotFoundException('Profile not found');
     const user = await this.userRepo.findOne({
-    where: { id: userId },
+      where: { id: userId },
     });
     if (!user) throw new NotFoundException('User not found');
 
@@ -110,7 +110,7 @@ export class EntretienService {
         score: null,
         report: null,
         completedAt: null,
-        user: user, 
+        user: user,
       }),
     );
 

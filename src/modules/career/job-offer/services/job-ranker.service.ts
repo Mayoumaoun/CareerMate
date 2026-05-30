@@ -16,12 +16,12 @@ interface RankedCandidate {
 export class JobRankerService {
   private readonly logger = new Logger(JobRankerService.name);
 
-  constructor(private readonly jobOfferRepository: JobOfferRepository) {}
+  constructor(private readonly jobOfferRepository: JobOfferRepository) { }
 
   async rankJobs(profile: ProfileEntity, liveJobs: any[]): Promise<RankedJobDto[]> {
     const profileVector = profile.profileVector;
     let dbJobs: JobOfferEntity[] = [];
-    
+
     // Stage 1: Vector matching from DB (Top 30 candidates)
     if (profileVector && profileVector.length > 0) {
       this.logger.debug('Fetching top candidates from DB via pgvector...');
@@ -32,7 +32,7 @@ export class JobRankerService {
 
     // Merge candidates
     const allCandidates = this.mergeAndFilterCandidates(dbJobs, liveJobs);
-    
+
     if (allCandidates.length === 0) {
       return [];
     }
@@ -53,28 +53,28 @@ export class JobRankerService {
 
   private mergeAndFilterCandidates(dbJobs: any[], liveJobs: any[]): any[] {
     const map = new Map<string, any>();
-    
+
     for (const job of dbJobs) {
-      if (job.sourceHash) map.set(job.sourceHash, job);
+      if (job.id) map.set(job.id, job);
     }
-    
+
     for (const job of liveJobs) {
-      if (job.sourceHash && !map.has(job.sourceHash)) {
-        map.set(job.sourceHash, job);
+      if (job.id && !map.has(job.id)) {
+        map.set(job.id, job);
       }
     }
-    
+
     return Array.from(map.values());
   }
 
   private calculateRuleScore(
-    job: any, 
-    profile: ProfileEntity, 
+    job: any,
+    profile: ProfileEntity,
     profileVector: number[] | null,
     profileSkills: string[]
   ): RankedCandidate {
     let score = 0;
-    
+
     // 1. Vector Similarity (base, max ~1.0)
     if (profileVector && job.vector) {
       const sim = this.cosineSimilarity(profileVector, job.vector);
@@ -87,7 +87,7 @@ export class JobRankerService {
     let overlapRatio = 0;
     const matchedSkills: string[] = [];
     const missingSkills: string[] = [];
-    
+
     if (jobSkills.length > 0) {
       for (const reqSkill of jobSkills) {
         if (profileSkills.includes(reqSkill.toLowerCase().trim())) {
@@ -157,7 +157,7 @@ export class JobRankerService {
   private mapToDto(candidate: RankedCandidate): RankedJobDto {
     const job = candidate.job;
     return {
-      id: job.id || job.sourceHash, // fallback to hash if it's a live job without DB ID
+      id: job.id,
       title: job.title,
       company: job.company,
       location: job.location,

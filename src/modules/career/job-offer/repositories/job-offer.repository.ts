@@ -61,18 +61,18 @@ export class JobOfferRepository extends Repository<JobOfferEntity> {
   }
 
   /**
-   * Find a job by its source hash (used for deduplication).
+   * Find a job by its id (used for deduplication).
    */
-  async findBySourceHash(sourceHash: string): Promise<JobOfferEntity | null> {
-    return this.findOne({ where: { sourceHash } });
+  async findById(id: string): Promise<JobOfferEntity | null> {
+    return this.findOne({ where: { id } });
   }
 
   /**
-   * Upsert a job — insert if new, skip if sourceHash already exists.
+   * Upsert a job — insert if new, skip if id already exists.
    * Returns true if a new record was inserted.
    */
   async upsertJob(jobData: Partial<JobOfferEntity>): Promise<boolean> {
-    const existing = await this.findBySourceHash(jobData.sourceHash!);
+    const existing = await this.findById(jobData.id!);
     if (existing) {
       return false;
     }
