@@ -8,6 +8,7 @@ import { use } from 'passport';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { ConfigService } from '@nestjs/config';
 import { ProfileService } from '../profile/profile.service';
+import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
 export class AuthController {
@@ -55,5 +56,12 @@ const redirectUrl = `${frontUrl}/auth/callback?token=${tokens.access_token}&next
 }`;
 
 return res.redirect(redirectUrl);
+}
+
+@Public()
+@UseGuards(AuthGuard('jwt-refresh'))
+@Post('refresh')
+async refresh(@Req() req) {
+  return this.authService.refreshAccessToken(req.user);
 }
 }

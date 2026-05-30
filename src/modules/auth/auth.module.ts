@@ -6,6 +6,7 @@ import { AuthGuard, PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtStrategy } from "./Passport/jwt.strategy";
+import { RefreshTokenStrategy } from "./Passport/refresh.strategy";
 import { APP_GUARD } from "@nestjs/core";
 import { GoogleOAuthStrategy } from "./Passport/googleOAuth.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
@@ -28,13 +29,13 @@ import { ProfileModule } from "../profile/profile.module";
                 }
                 return {
                     secret,
-                    signOptions: { expiresIn: '1d' },
+                    signOptions: { expiresIn: (configService.get<string>('JWT_EXPIRES_IN') || '15m') as any },
                 };
             },
             
         })
     ],
-    providers: [AuthService, JwtStrategy,GoogleOAuthStrategy, {
+    providers: [AuthService, JwtStrategy, RefreshTokenStrategy, GoogleOAuthStrategy, {
         provide: APP_GUARD, useClass: JwtAuthGuard
     } ],
     controllers: [AuthController],
