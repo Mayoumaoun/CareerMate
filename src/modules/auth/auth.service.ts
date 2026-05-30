@@ -4,11 +4,14 @@ import { CreateUserDto} from "../user/dto/create-user.dto";
 import { SignInDto } from "./dto/sign-in.dto";
 import * as bcrypt from "bcrypt";
 import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AuthService {
-    constructor(private readonly userService: UserService,
-    private readonly jwtService: JwtService
+    constructor(
+        private readonly userService: UserService,
+        private readonly jwtService: JwtService,
+        private readonly configService: ConfigService
     ){}
 
     async signUp(newUser: CreateUserDto){
@@ -38,9 +41,49 @@ export class AuthService {
 
     async jwtLogin(user:any){
         const payload = { sub: user.id, username: user.username};
+        
+        const accessToken = await this.jwtService.signAsync(payload);
+        const refreshToken = await this.generateRefreshToken(payload);
+        
+        // Sauvegarder le refresh token en base de données
+        await this.userService.update(user.id, { refreshToken });
+        
         return {
-            access_token: await this.jwtService.signAsync(payload),
-            //refresh_token
+            access_token: accessToken,
+            refresh_token: refreshToken,
+            token_type: 'Bearer',
+            expires_in: this.configService.get<string>('JWT_EXPIRES_IN', '15m')
+        };
+    }
+
+    async generateRefreshToken(payload: any) {
+        const refreshSecret = this.configService.get<string>('JWT_TOKEN_REFRESH')?.trim();
+        if (!refreshSecret) {
+            throw new Error(
+                'JWT_TOKEN_REFRESH is missing. Set it in .env or .env.development (see .env.example).',
+            );
+        }
+
+        return await this.jwtService.signAsync(payload, {
+            secret: refreshSecret,
+            expiresIn: (this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d') as any,
+        });
+    }
+
+    async refreshAccessToken(user: any) {
+        const userEntity = await this.userService.findOneByCriteria('id', user.userId);
+        
+        if (!userEntity || !userEntity.refreshToken || userEntity.refreshToken !== user.refreshToken) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+
+        const payload = { sub: user.userId, username: user.username };
+        const newAccessToken = await this.jwtService.signAsync(payload);
+
+        return {
+            access_token: newAccessToken,
+            token_type: 'Bearer',
+            expires_in: this.configService.get<string>('JWT_EXPIRES_IN', '15m')
         };
     }
     

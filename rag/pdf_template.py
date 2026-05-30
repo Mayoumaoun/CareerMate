@@ -9,6 +9,151 @@ from reportlab.platypus import (
 )
 
 
+def estimate_page_count(cv_data: dict) -> float:
+    """
+    Estimate how many pages the CV will take based on content length.
+    Calibrated for our reportlab setup (A4, 1.5cm margins, current font sizes).
+    Returns a float — 1.0 = fits perfectly, 1.3 = 30% overflow, etc.
+    """
+    units = 0
+
+    # Header: name + contact line = ~2 units
+    units += 2
+
+    # Summary: ~1.5 units per sentence
+    if cv_data.get('summary'):
+        sentences = [s.strip() for s in cv_data['summary'].split('.') if s.strip()]
+        units += len(sentences) * 1.5
+
+    # Skills: section header + grid rows (3 per row)
+    if cv_data.get('skills'):
+        units += 1.5  # section header
+        units += (len(cv_data['skills']) / 3) * 1.2
+
+    # Education: 1.5 per entry
+    if cv_data.get('education'):
+        units += 1.5 + len(cv_data['education']) * 1.5
+
+    # Experience: header + per role (title + company + bullets)
+    if cv_data.get('experiences'):
+        units += 1.5  # section header
+        for exp in cv_data['experiences']:
+            units += 2  # title + company
+            units += len(exp.get('bullets', [])) * 1.2
+
+    # Projects: header + per project
+    if cv_data.get('projects'):
+        units += 1.5
+        for proj in cv_data['projects']:
+            units += 1.5  # title + tech
+            units += len(proj.get('bullets', [])) * 1.2
+
+    # Associations: header + per entry
+    if cv_data.get('associations'):
+        units += 1.5
+        for assoc in cv_data['associations']:
+            units += 1.5  # role + org
+            units += len(assoc.get('bullets', [])) * 1.2
+
+    # Certifications
+    if cv_data.get('certifications'):
+        units += 1.5 + len(cv_data['certifications']) * 1.0
+
+    # Languages
+    if cv_data.get('languages'):
+        units += 1.5
+
+    # Qualities
+    if cv_data.get('qualities'):
+        units += 1.5
+
+    # One page = ~45 units (calibrated for our layout)
+    PAGE_CAPACITY = 58
+    return units / PAGE_CAPACITY
+
+
+def enforce_one_page(cv_data: dict) -> dict:
+    """
+    Progressively trim CV content — stops as soon as it fits one page.
+    Each trim step is only applied if the CV is still over 1 page.
+    Priority: trim least important content first (qualities → certifications → bullets).
+    """
+    import copy
+    data = copy.deepcopy(cv_data)
+
+    # If already fits — return immediately, no trimming at all
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 1: Trim qualities (max 4)
+    if data.get('qualities') and len(data['qualities']) > 4:
+        data['qualities'] = data['qualities'][:4]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 2: Trim certifications (max 2)
+    if data.get('certifications') and len(data['certifications']) > 2:
+        data['certifications'] = data['certifications'][:2]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 3: Trim association bullets (max 1 per)
+    if data.get('associations'):
+        for assoc in data['associations']:
+            if assoc.get('bullets') and len(assoc['bullets']) > 1:
+                assoc['bullets'] = assoc['bullets'][:1]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 4: Trim associations count (max 2)
+    if data.get('associations') and len(data['associations']) > 2:
+        data['associations'] = data['associations'][:2]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 5: Trim project bullets (max 2 per)
+    if data.get('projects'):
+        for proj in data['projects']:
+            if proj.get('bullets') and len(proj['bullets']) > 2:
+                proj['bullets'] = proj['bullets'][:2]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 6: Trim projects count (max 2)
+    if data.get('projects') and len(data['projects']) > 2:
+        data['projects'] = data['projects'][:2]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 7: Trim experience bullets (max 2 per)
+    if data.get('experiences'):
+        for exp in data['experiences']:
+            if exp.get('bullets') and len(exp['bullets']) > 2:
+                exp['bullets'] = exp['bullets'][:2]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 8: Trim experiences count (max 3)
+    if data.get('experiences') and len(data['experiences']) > 3:
+        data['experiences'] = data['experiences'][:3]
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 9: Trim summary (max 3 sentences)
+    if data.get('summary'):
+        sentences = [s.strip() for s in data['summary'].split('.') if s.strip()]
+        if len(sentences) > 3:
+            data['summary'] = '. '.join(sentences[:3]) + '.'
+    if estimate_page_count(data) <= 1.0:
+        return data
+
+    # Step 10: Trim skills (max 9 — fits 3×3 grid perfectly)
+    if data.get('skills') and len(data['skills']) > 9:
+        data['skills'] = data['skills'][:9]
+
+    return data
+
+
 class CVPDFGenerator:
     def __init__(self, candidate_name: str = "Candidate", personal_info: dict = None):
         self.candidate_name = candidate_name
@@ -84,6 +229,8 @@ class CVPDFGenerator:
 
     # def generate(self, cv_data: dict, personal_info: dict = None) -> bytes:
     def generate(self, cv_data: dict) -> bytes:
+        # Enforce one-page budget before rendering — progressively trim non-critical content
+        cv_data = enforce_one_page(cv_data)
 
         try:
             buffer = io.BytesIO()

@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Module, forwardRef } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule } from "@nestjs/config";
 import { AuthModule } from "../auth/auth.module";
@@ -16,7 +16,7 @@ import { ValidateSkillsPipe } from "./pipes/validate-skills.pipe";
 import { CvModule } from "../cv/cv.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity, UserPreferencesEntity]), AuthModule, ConfigModule,CvModule],
+    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity, UserPreferencesEntity]), forwardRef(() => AuthModule), ConfigModule, CvModule],
     providers: [ProfileService, CvParserService, ValidateAgeMinimumPipe, ValidateDatesPipe, ValidateSkillsPipe],
     controllers: [ProfileController],
     exports: [ProfileService]

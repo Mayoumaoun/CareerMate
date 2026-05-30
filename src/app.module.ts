@@ -97,7 +97,7 @@ function getNumberConfig(
         password: getStringConfig(configService, 'DB_PASSWORD', 'postgres'),
         database: getStringConfig(configService, 'DB_NAME', 'careermate'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
         dropSchema: false,
       }),
     }),

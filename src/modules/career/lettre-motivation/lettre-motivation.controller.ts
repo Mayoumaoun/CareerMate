@@ -69,9 +69,14 @@ export class LettreMotivationController {;
     );
 
     res.setHeader('Content-Type', 'application/pdf');
+
+    const safeName = `cover-letter-${lettre.company}-${lettre.position}`
+      .replace(/[^a-z0-9\-_]/gi, '_')
+      .toLowerCase();
+
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="cover-letter-${lettre.company}-${lettre.position}.pdf"`,
+      `attachment; filename="${safeName}.pdf"`,
     );
     res.send(pdf);
   }
