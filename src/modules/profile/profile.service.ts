@@ -18,6 +18,8 @@ export class ProfileService {
     private readonly projectRepository: Repository<ProjectEntity>,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(CvEntity)                            //testing   
+    private readonly cvRepository: Repository<CvEntity>,  //cv injected with the last method for testing 
   ) {}
 
  
@@ -33,6 +35,16 @@ export class ProfileService {
 
       if (!user) {
         throw new NotFoundException('User not found');
+      }
+
+      const existingProfile = await this.profileRepository.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (existingProfile) {
+        throw new BadRequestException(
+          'This user already has a profile. Use PUT /profile or the step update endpoints to edit it, or create Amine with a different user account.',
+        );
       }
 
       // Progressive approach: Create profile with ONLY step1
@@ -426,5 +438,41 @@ export class ProfileService {
       createdAt: profile.createdAt,
       userLevel: profile.userLevel,
     };
+  }
+
+  /**
+   * 🔧 DEBUG METHOD - Delete a user's profile (for testing/debugging)
+   * Use this to clear orphaned profiles when the unique constraint is blocking new profile creation
+   */
+  async debugDeleteProfile(userId: string): Promise<{ message: string }> {
+    try {
+      const profile = await this.profileRepository.findOne({
+        where: { user: { id: userId } },
+      });
+
+      if (!profile) {
+        return { message: 'No profile found for this user - nothing to delete' };
+      }
+
+      // Delete related CVs first (due to foreign key constraint)
+      await this.cvRepository.delete({ profile: { id: profile.id } });
+      console.log(`✓ Deleted ${profile.id} CVs`);
+
+      // Delete related projects (due to foreign key constraint)
+      await this.projectRepository.delete({ profile: { id: profile.id } });
+      console.log(`✓ Deleted projects for profile ${profile.id}`);
+
+      // Now delete the profile itself
+      await this.profileRepository.delete({ id: profile.id });
+      console.log(`✓ Profile ${profile.id} deleted successfully`);
+
+      return { 
+        message: `✓ Profile and related data deleted successfully. You can now create a new profile.`
+      };
+    } catch (error: any) {
+      throw new BadRequestException(
+        `Failed to delete profile: ${error.message}`,
+      );
+    }
   }
 }

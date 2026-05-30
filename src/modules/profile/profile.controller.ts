@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Put,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -252,5 +253,17 @@ export class ProfileController {
       8,
       step8Data,
     );
+  }
+
+  /**
+   * 🔧 DEBUG ENDPOINT - Delete current user's profile (for testing)
+   * Only use this to clear orphaned profiles during development
+   */
+  @ApiOperation({ summary: '[DEBUG] Delete current user profile' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Profile deleted successfully.' })
+  @Delete('debug/clear')
+  async debugClearProfile(@Req() request: any): Promise<{ message: string }> {
+    const userId = request.user.userId;
+    return await this.profileService.debugDeleteProfile(userId);
   }
 }
