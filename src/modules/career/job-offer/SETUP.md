@@ -10,7 +10,7 @@ Your NestJS `.env` file must include the following keys for the module's AI and 
 
 ```env
 # LLM API Key - Required by MatchExplainerService 
-still under construction :)
+GROQ_API_KEY="your_groq_api_key_here"
 
 # Redis Configuration (Used for caching queries and explanations)
 REDIS_HOST="localhost"
@@ -43,7 +43,7 @@ The NestJS `KeejobsAdapter` relies on a separate Python FastAPI scraper service 
    ```
 3. Start the FastAPI server (typically running on port 8000):
    ```bash
-   uvicorn keejob_scraper:app --reload
+   uvicorn keejob_scraper:app --reload 
    ```
    *(Ensure the local URL matches what the NestJS adapters expect, e.g., `http://localhost:8000/scrape/keejob`)*
 
