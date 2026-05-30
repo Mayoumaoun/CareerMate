@@ -1,23 +1,3 @@
-# import pickle
-# import numpy as np
-# from rag.prepare_data import DocumentChunk
-# from sqlalchemy.orm import sessionmaker
-# # ... engine setup ...
-
-# # Load embeddings from pickle (fast, no DB query needed)
-# with open("embeddings.pkl", "rb") as f:
-#     ALL_EMBEDDINGS = np.array(pickle.load(f))  # shape: (14929, 384)
-
-# # Load chunk texts from DB once at startup
-# session = Session()
-# ALL_CHUNKS = [row.chunk_text for row in session.query(DocumentChunk).order_by(DocumentChunk.id).all()]
-# session.close()
-
-# print(f"Ready: {len(ALL_CHUNKS)} chunks, {ALL_EMBEDDINGS.shape} embeddings")
-
-
-
-
 import pickle
 import numpy as np
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, JSON
@@ -104,3 +84,60 @@ if __name__ == "__main__":
         print(f"\n{i}. Similarity: {r['similarity']:.4f}")
         print(f"   Text: {r['text'][:120]}...")
     print("\nRAG service test passed.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# import pickle
+# import numpy as np
+# from rag.prepare_data import DocumentChunk
+# from sqlalchemy.orm import sessionmaker
+# # ... engine setup ...
+
+# # Load embeddings from pickle (fast, no DB query needed)
+# with open("embeddings.pkl", "rb") as f:
+#     ALL_EMBEDDINGS = np.array(pickle.load(f))  # shape: (14929, 384)
+
+# # Load chunk texts from DB once at startup
+# session = Session()
+# ALL_CHUNKS = [row.chunk_text for row in session.query(DocumentChunk).order_by(DocumentChunk.id).all()]
+# session.close()
+
+# print(f"Ready: {len(ALL_CHUNKS)} chunks, {ALL_EMBEDDINGS.shape} embeddings")
+

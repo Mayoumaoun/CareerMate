@@ -40,6 +40,7 @@ export class ProfileService {
       // Progressive approach: Create profile with ONLY step1
       // Other steps will be added via PUT /profile/step/X
       const profileData_obj: any = {
+        
         bio: profileData.bio || this.generateDefaultBio(profileData.step1),
         userLevel: 'Junior', // Default level (will be updated in step2)
         skills: [],
