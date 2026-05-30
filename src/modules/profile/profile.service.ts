@@ -5,6 +5,7 @@ import { ProfileEntity } from './entities/profile.entity';
 import { ProjectEntity } from './entities/projet.entity';
 import { CvEntity } from '../cv/cv.entity';
 import { UserEntity } from '../user/entities/user.entity';
+import { UserPreferencesEntity } from '../preferences/entities/user-preferences.entity';
 import { CreateProfileDto } from './dtos/create-profile.dto';
 import { UpdateProfileDto } from './dtos/update-profile.dto';
 import * as jsonSchemas from 'src/common/types/json-schemas';
@@ -19,7 +20,10 @@ export class ProfileService {
     @InjectRepository(ProjectEntity)
     private readonly projectRepository: Repository<ProjectEntity>,
     @InjectRepository(UserEntity)
-    private readonly userRepository: Repository<UserEntity>, private readonly redis: RedisService
+    private readonly userRepository: Repository<UserEntity>,
+    @InjectRepository(UserPreferencesEntity)
+    private readonly preferencesRepository: Repository<UserPreferencesEntity>,
+    private readonly redis: RedisService,
   ) {}
 
   private readonly  PROFILE_TTL = 24 * 3600; 
@@ -77,11 +81,10 @@ export class ProfileService {
 
     const getProfile = async () => (await this.profileRepository.findOne({
       where: { user: { id: userId } },
-      relations: ['projects', 'cvs', 'user'],
+      relations: ['projects', 'cvs', 'user', 'user.preferences'],
     } as any))
     const profile= await this.redis.getOrSet<ProfileEntity>(`user:${userId}:profile`,getProfile,this.PROFILE_TTL );
     if (!profile) {
-      //throw new NotFoundException('Profile not found');
       return null;
     }
 
@@ -451,5 +454,71 @@ if (!profile) {
       createdAt: profile.createdAt,
       userLevel: profile.userLevel,
     };
+  }
+
+  async updateUserPreferences(userId: string, preferences: Partial<UserPreferencesEntity>): Promise<UserPreferencesEntity> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['preferences'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.preferences) {
+      const newPreferences = this.preferencesRepository.create({
+        user,
+        jobOffers: preferences.jobOffers ?? {},
+        simulation: preferences.simulation ?? {},
+        lettreMotivation: preferences.lettreMotivation ?? {},
+        postsLinkedIn: preferences.postsLinkedIn ?? {},
+        roadmap: preferences.roadmap ?? {},
+        opportunities: preferences.opportunities ?? {},
+        tendances: preferences.tendances ?? {},
+      } as Partial<UserPreferencesEntity> & { user: UserEntity });
+      const saved = await this.preferencesRepository.save(newPreferences);
+      await this.redis.del(`user:${userId}:profile`);
+      return saved;
+    }
+
+    const updatedPreferences = this.preferencesRepository.merge(
+      user.preferences,
+      {
+        ...preferences,
+        jobOffers: {
+          ...user.preferences.jobOffers,
+          ...preferences.jobOffers,
+        },
+        simulation: {
+          ...user.preferences.simulation,
+          ...preferences.simulation,
+        },
+        lettreMotivation: {
+          ...user.preferences.lettreMotivation,
+          ...preferences.lettreMotivation,
+        },
+        postsLinkedIn: {
+          ...user.preferences.postsLinkedIn,
+          ...preferences.postsLinkedIn,
+        },
+        roadmap: {
+          ...user.preferences.roadmap,
+          ...preferences.roadmap,
+        },
+        opportunities: {
+          ...user.preferences.opportunities,
+          ...preferences.opportunities,
+        },
+        tendances: {
+          ...user.preferences.tendances,
+          ...preferences.tendances,
+        },
+      },
+    );
+
+    const saved = await this.preferencesRepository.save(updatedPreferences);
+    await this.redis.del(`user:${userId}:profile`);
+    return saved;
   }
 }

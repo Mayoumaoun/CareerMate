@@ -77,6 +77,18 @@ export class ProfileController {
     return await this.profileService.getProfile(userId);
   }
 
+  @ApiOperation({ summary: 'Update user preferences' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'User preferences updated successfully.' })
+  @ApiUnauthorizedResponse({ description: 'Unauthorized' })
+  @ApiBadRequestResponse({ description: 'Invalid preferences payload' })
+  @Put('preferences')
+  async updatePreferences(
+    @Req() request: any,
+    @Body() preferences: Record<string, any>,
+  ): Promise<any> {
+    const userId = request.user.userId;
+    return await this.profileService.updateUserPreferences(userId, preferences);
+  }
 
   @ApiOperation({ summary: 'Get profile summary' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Profile summary returned successfully.' })

@@ -6,6 +6,7 @@ import { CvEntity } from "../cv/cv.entity";
 import { ProfileEntity } from "./entities/profile.entity";
 import { ProjectEntity } from "./entities/projet.entity";
 import { UserEntity } from "../user/entities/user.entity";
+import { UserPreferencesEntity } from "../preferences/entities/user-preferences.entity";
 import { ProfileService } from "./profile.service";
 import { ProfileController } from "./profile.controller";
 import { CvParserService } from "./services/cv-parser.service";
@@ -15,7 +16,7 @@ import { ValidateSkillsPipe } from "./pipes/validate-skills.pipe";
 import { CvModule } from "../cv/cv.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity]), AuthModule, ConfigModule,CvModule],
+    imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity, UserPreferencesEntity]), AuthModule, ConfigModule,CvModule],
     providers: [ProfileService, CvParserService, ValidateAgeMinimumPipe, ValidateDatesPipe, ValidateSkillsPipe],
     controllers: [ProfileController],
     exports: [ProfileService]
