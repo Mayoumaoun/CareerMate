@@ -5,13 +5,13 @@ import { JobSourceAdapter, RawJobOffer } from './job-source.adapter';
 import { lastValueFrom } from 'rxjs';
 
 @Injectable()
-export class TanitjobsAdapter implements JobSourceAdapter {
-  private readonly logger = new Logger(TanitjobsAdapter.name);
+export class KeejobsAdapter implements JobSourceAdapter {
+  private readonly logger = new Logger(KeejobsAdapter.name);
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async fetchJobs(queries: string[], location: string): Promise<RawJobOffer[]> {
     const allJobs: RawJobOffer[] = [];
@@ -20,18 +20,18 @@ export class TanitjobsAdapter implements JobSourceAdapter {
     const seenUrls = new Set<string>();
 
     try {
-      this.logger.debug(`Triggering Tanitjobs scraper for ${queries.length} queries`);
+      this.logger.debug(`Triggering Keejobs scraper for ${queries.length} queries`);
       // Send a single POST request to scrape all queries
       const response = await lastValueFrom(
         this.httpService.post(
-          `${scraperUrl}/scrape/tanitjobs`,
+          `${scraperUrl}/scrape/keejob`,
           { queries, location },
           { timeout: 60_000 } // Scrapers can be slow
         ),
       );
 
       const data: any[] = response.data?.jobs ?? [];
-      this.logger.debug(`Tanitjobs scraper returned ${data.length} results`);
+      this.logger.debug(`Keejobs scraper returned ${data.length} results`);
 
       for (const job of data) {
         const url = job.url ?? '';
@@ -48,18 +48,33 @@ export class TanitjobsAdapter implements JobSourceAdapter {
           contractType: job.contract_type ?? null,
           description: this.sanitizeDescription(job.description ?? ''),
           skillsRequired: Array.isArray(job.skills) ? job.skills.filter(Boolean) : [],
-          postedAt: job.posted_at ? new Date(job.posted_at) : new Date(),
+          postedAt: this.parseDate(job.posted_at),
           url,
-          source: 'tanitjobs',
+          source: 'keejobs',
           sourceMetadata: job.sourceMetadata ?? {},
         });
       }
     } catch (error) {
-      this.logger.error(`Failed to run Tanitjobs scraper plugin: ${error?.message}`);
+      this.logger.error(`Failed to run Keejobs scraper plugin: ${error?.message}`);
     }
 
-    this.logger.log(`Tanitjobs: fetched ${allJobs.length} unique jobs`);
+    this.logger.log(`Keejobs: fetched ${allJobs.length} unique jobs`);
     return allJobs;
+  }
+
+  private parseDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    
+    // Check if format is DD/MM/YYYY
+    const match = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (match) {
+      const [_, day, month, year] = match;
+      return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00Z`);
+    }
+    
+    // Fallback to standard JS date parsing
+    const parsed = new Date(dateStr);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
   }
 
   private sanitizeDescription(desc: string): string {

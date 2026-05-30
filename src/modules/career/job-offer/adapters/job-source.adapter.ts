@@ -14,7 +14,7 @@ export interface RawJobOffer {
   skillsRequired: string[];
   postedAt: Date;
   url: string;
-  source: 'himalayas' | 'arbeitnow' | 'jsearch' | 'tanitjobs';
+  source: 'himalayas' | 'arbeitnow' | 'jsearch' | 'keejobs';
   sourceMetadata: Record<string, unknown>;
 }
 

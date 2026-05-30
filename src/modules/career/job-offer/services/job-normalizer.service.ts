@@ -3,8 +3,6 @@ import * as crypto from 'crypto';
 import { RawJobOffer } from '../adapters/job-source.adapter';
 import { JobOfferRepository } from '../repositories/job-offer.repository';
 
-// Note: dynamic import for ESM modules when running in CJS environment
-// Using eval to bypass TypeScript compiler replacing dynamic imports
 const importTransformers = async () => eval('import("@xenova/transformers")');
 
 @Injectable()
@@ -13,11 +11,11 @@ export class JobNormalizerService implements OnModuleInit {
   private extractor: any = null;
   private isInitializing = false;
 
-  constructor(private readonly jobOfferRepository: JobOfferRepository) {}
+  constructor(private readonly jobOfferRepository: JobOfferRepository) { }
 
   async onModuleInit() {
     // Fire-and-forget initialization in background
-    this.initModel().catch(err => 
+    this.initModel().catch(err =>
       this.logger.error('Background model initialization failed:', err)
     );
   }
@@ -25,15 +23,15 @@ export class JobNormalizerService implements OnModuleInit {
   private async initModel() {
     if (this.extractor || this.isInitializing) return;
     this.isInitializing = true;
-    
+
     try {
       this.logger.log('Initializing local embedding model (all-MiniLM-L6-v2)...');
       const { pipeline, env } = await importTransformers();
-      
+
       // Prevent downloading models to unexpected paths in production
       // env.localModelPath = './models';
       env.allowRemoteModels = true;
-      
+
       this.extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
       this.logger.log('Embedding model initialized successfully.');
     } catch (error) {
@@ -67,7 +65,7 @@ export class JobNormalizerService implements OnModuleInit {
 
   async normalizeAndPersist(rawJobs: RawJobOffer[]): Promise<void> {
     if (!rawJobs.length) return;
-    
+
     const extractor = await this.getExtractor();
 
     // In-memory deduplication via Set
@@ -89,11 +87,11 @@ export class JobNormalizerService implements OnModuleInit {
     for (const job of uniqueJobs) {
       try {
         const sourceHash = (job as any).sourceHash;
-        
+
         // Skip if already in DB
         const exists = await this.jobOfferRepository.findBySourceHash(sourceHash);
         if (exists) {
-          continue; 
+          continue;
         }
 
         // Generate embedding
@@ -124,7 +122,7 @@ export class JobNormalizerService implements OnModuleInit {
         this.logger.warn(`Failed to normalize job "${job.title}": ${error.message}`);
       }
     }
-    
+
     this.logger.log(`Successfully saved ${savedCount} new jobs to DB.`);
   }
 
@@ -134,7 +132,7 @@ export class JobNormalizerService implements OnModuleInit {
    */
   async normalizeLiveJobs(rawJobs: RawJobOffer[]): Promise<any[]> {
     if (!rawJobs.length) return [];
-    
+
     const extractor = await this.getExtractor();
     const uniqueIds = new Set<string>();
     const jobs = [];
@@ -143,7 +141,7 @@ export class JobNormalizerService implements OnModuleInit {
       const sourceHash = this.generateId(job.title, job.company);
       if (!uniqueIds.has(sourceHash)) {
         uniqueIds.add(sourceHash);
-        
+
         try {
           const textToEmbed = this.prepareTextForEmbedding(job);
           const output = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
@@ -161,10 +159,37 @@ export class JobNormalizerService implements OnModuleInit {
     }
 
     // Fire-and-forget background persistence to enrich the database
-    this.normalizeAndPersist(rawJobs).catch(err => 
+    this.normalizeAndPersist(rawJobs).catch(err =>
       this.logger.error(`Background persistence failed: ${err.message}`)
     );
 
     return jobs;
+  }
+
+  /**
+   * Generates a vector embedding for a user profile based on its skills, roles, and experiences.
+   */
+  async embedProfile(profile: any): Promise<number[]> {
+    const extractor = await this.getExtractor();
+
+    // Extract textual data
+    const skills = profile.skills?.map((s: any) => s.name).join(' ') || '';
+    let roles = '';
+    if (profile.targetPosition?.roles) {
+      roles = profile.targetPosition.roles.join(' ');
+    } else if (profile.targetProfile?.targetPositions) {
+      roles = profile.targetProfile.targetPositions.join(' ');
+    }
+    const experiences = profile.experiences?.map((e: any) => `${e.title} ${e.description || ''}`).join(' ') || '';
+
+    const textToEmbed = `${roles} ${skills} ${experiences}`.substring(0, 2000).replace(/\s+/g, ' ');
+
+    try {
+      const output = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
+      return Array.from(output.data) as number[];
+    } catch (err) {
+      this.logger.error(`Failed to embed profile: ${err.message}`);
+      return [];
+    }
   }
 }

@@ -36,7 +36,7 @@ export class JobOfferRepository extends Repository<JobOfferEntity> {
         FROM job_offer j
         WHERE j.vector IS NOT NULL
           AND j.status = $3
-        ORDER BY j.vector::vector(384) <=> $1::vector(384)
+        ORDER BY j.vector::text::vector(384) <=> $1::vector(384)
         LIMIT $2;
         `,
         [vectorString, limit, JobOfferStatus.ACTIVE],

@@ -1,9 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { ProfileEntity } from '../../../profile/entities/profile.entity';
+import { QueryGeneratorService } from './query-generator.service';
 import { HimalayasAdapter } from '../adapters/himalayas.adapter';
 import { ArbeitnowAdapter } from '../adapters/arbeitnow.adapter';
 import { JSearchAdapter } from '../adapters/jsearch.adapter';
-import { TanitjobsAdapter } from '../adapters/tanitjobs.adapter';
+import { KeejobsAdapter } from '../adapters/keejobs.adapter';
 import { RawJobOffer } from '../adapters/job-source.adapter';
 import { JobNormalizerService } from './job-normalizer.service';
 
@@ -15,14 +19,13 @@ export class JobFetcherService {
     private readonly himalayasAdapter: HimalayasAdapter,
     private readonly arbeitnowAdapter: ArbeitnowAdapter,
     private readonly jsearchAdapter: JSearchAdapter,
-    private readonly tanitjobsAdapter: TanitjobsAdapter,
+    private readonly keejobsAdapter: KeejobsAdapter,
     private readonly jobNormalizerService: JobNormalizerService,
-  ) {}
+    @InjectRepository(ProfileEntity)
+    private readonly profileRepository: Repository<ProfileEntity>,
+    private readonly queryGeneratorService: QueryGeneratorService,
+  ) { }
 
-  /**
-   * Used for fetching live data on user request (free APIs).
-   * Does NOT use JSearch and Tanitjobs, per constraints.
-   */
   async fetchLiveJobs(queries: string[], location: string): Promise<RawJobOffer[]> {
     const results = await Promise.allSettled([
       this.himalayasAdapter.fetchJobs(queries, location),
@@ -41,23 +44,41 @@ export class JobFetcherService {
     return jobs;
   }
 
+  private async getDynamicQueries(): Promise<string[]> {
+    const profiles = await this.profileRepository.find();
+    const allQueries = new Set<string>();
+
+    for (const profile of profiles) {
+      const profileQueries = this.queryGeneratorService.buildQueries(profile);
+      profileQueries.forEach((q) => allQueries.add(q));
+    }
+
+    const queriesArray = Array.from(allQueries);
+    if (queriesArray.length === 0) {
+      return ['Software Engineer Tunisia', 'Data Scientist Tunisia', 'Frontend remote Tunisia'];
+    }
+
+    // Pick top 15 distinct queries to prevent overloading APIs
+    return queriesArray.slice(0, 15);
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async handleJSearchCron() {
     this.logger.log('Running scheduled JSearch update...');
-    // In a real app, these queries would come from a repository of all user targets
-    // For demo constraints, we use hardcoded general queries for the DB
-    const queries = ['Software Engineer Tunisia', 'Data Scientist Tunisia', 'Frontend remote Tunisia'];
+    const queries = await this.getDynamicQueries();
+    this.logger.log(`Using ${queries.length} dynamic queries: ${queries.join(', ')}`);
     const jobs = await this.jsearchAdapter.fetchJobs(queries, 'Tunisia');
     await this.jobNormalizerService.normalizeAndPersist(jobs);
     this.logger.log(`JSearch update completed. Saved ${jobs.length} jobs.`);
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_1AM)
-  async handleTanitjobsCron() {
-    this.logger.log('Running scheduled Tanitjobs update...');
-    const queries = ['Software Engineer', 'React', 'Nodejs'];
-    const jobs = await this.tanitjobsAdapter.fetchJobs(queries, 'Tunisia');
+  async handleKeejobsCron() {
+    this.logger.log('Running scheduled Keejobs update...');
+    const queries = await this.getDynamicQueries();
+    this.logger.log(`Using ${queries.length} dynamic queries: ${queries.join(', ')}`);
+    const jobs = await this.keejobsAdapter.fetchJobs(queries, 'Tunisia');
     await this.jobNormalizerService.normalizeAndPersist(jobs);
-    this.logger.log(`Tanitjobs update completed. Saved ${jobs.length} jobs.`);
+    this.logger.log(`Keejobs update completed. Saved ${jobs.length} jobs.`);
   }
 }

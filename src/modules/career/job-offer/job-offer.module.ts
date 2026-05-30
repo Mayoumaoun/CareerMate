@@ -4,6 +4,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JobOfferEntity } from './entities/job-offer.entity';
 import { JobOfferController } from './job-offer.controller';
+import { JobFetcherController } from './job-fetcher.controller';
 import { JobOfferService } from './job-offer.service';
 import { JobOfferRepository } from './repositories/job-offer.repository';
 import { QueryGeneratorService } from './services/query-generator.service';
@@ -14,18 +15,18 @@ import { MatchExplainerService } from './services/match-explainer.service';
 import { HimalayasAdapter } from './adapters/himalayas.adapter';
 import { ArbeitnowAdapter } from './adapters/arbeitnow.adapter';
 import { JSearchAdapter } from './adapters/jsearch.adapter';
-import { TanitjobsAdapter } from './adapters/tanitjobs.adapter';
+import { KeejobsAdapter } from './adapters/keejobs.adapter';
 import { RedisModule } from '../../../common/redis/redis.module';
-import { ProfileEntity } from '../../profile/entities/profile.entity'; // For feature if needed
+import { ProfileEntity } from '../../profile/entities/profile.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([JobOfferEntity]),
+    TypeOrmModule.forFeature([JobOfferEntity, ProfileEntity]),
     HttpModule,
     ScheduleModule.forRoot(),
     RedisModule,
   ],
-  controllers: [JobOfferController],
+  controllers: [JobOfferController, JobFetcherController],
   providers: [
     JobOfferService,
     JobOfferRepository,
@@ -37,8 +38,8 @@ import { ProfileEntity } from '../../profile/entities/profile.entity'; // For fe
     HimalayasAdapter,
     ArbeitnowAdapter,
     JSearchAdapter,
-    TanitjobsAdapter,
+    KeejobsAdapter,
   ],
   exports: [JobOfferService],
 })
-export class JobOfferModule {}
+export class JobOfferModule { }

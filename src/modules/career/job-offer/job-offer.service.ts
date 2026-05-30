@@ -1,4 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { RedisService } from '../../../common/redis/redis.service';
 import { ProfileEntity } from '../../profile/entities/profile.entity';
@@ -31,6 +33,8 @@ export class JobOfferService {
     private readonly jobRanker: JobRankerService,
     private readonly matchExplainer: MatchExplainerService,
     private readonly jobOfferRepository: JobOfferRepository,
+    @InjectRepository(ProfileEntity)
+    private readonly profileRepository: Repository<ProfileEntity>,
   ) {}
 
   async getAllOffers(): Promise<any[]> {
@@ -50,6 +54,17 @@ export class JobOfferService {
 
     let isCached = true;
 
+    // Check if profile has a vector. If not, generate and save it.
+    if (!profile.profileVector || profile.profileVector.length === 0) {
+      this.logger.log(`Generating missing vector for profile ${profile.id}...`);
+      const newVector = await this.jobNormalizer.embedProfile(profile);
+      if (newVector && newVector.length > 0) {
+        profile.profileVector = newVector;
+        await this.profileRepository.update(profile.id, { profileVector: newVector });
+        this.logger.log(`Profile ${profile.id} vector generated and saved.`);
+      }
+    }
+
     const rankedJobs = await this.redisService.getOrSet(cacheKey, async () => {
       isCached = false;
       this.logger.log(`Fetching live jobs for profile ${profile.id} with queries: `, queries);
@@ -67,7 +82,7 @@ export class JobOfferService {
       
       // Step 4: Apply optional frontend filters
       return this.applyFilters(ranked, filters);
-    }, 4 * 3600 * 1000); // 4 hours caching
+    }, 5 * 60 * 1000); // 5 minutes caching
 
     return {
       jobs: rankedJobs,
