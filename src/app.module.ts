@@ -10,7 +10,6 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
 import { PresenceModule } from './modules/presence/presence.module';
 import { UserModule } from './modules/user/user.module';
 import { DiscoveryModule } from './modules/discovery/discovery.module';
-import { JobMatchingModule } from './modules/career/job-offer/matching/job-matching.module';
 import { CandidatureModule } from './modules/career/candidature/candidature.module';
 import { RedisModule } from './common/redis/redis.module';
 import { AuthController } from './modules/auth/auth.controller';
@@ -113,7 +112,6 @@ function getNumberConfig(
     CvModule,
     LettreMotivationModule,
     JobOfferModule,
-    JobMatchingModule,
     CandidatureModule,
     SimulationModule,
     RoadmapModule,

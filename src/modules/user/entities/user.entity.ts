@@ -1,5 +1,4 @@
 import { CandidatureEntity } from "src/modules/career/candidature/candidature.entity";
-import { JobOfferEntity } from "src/modules/career/job-offer/job-offer.entity";
 import { LettreMotivationEntity } from "src/modules/career/lettre-motivation/lettre-motivation.entity";
 import { RoadmapEntity } from "src/modules/career/roadmap/roadmap.entity";
 import { Simulation } from "src/modules/career/simulation/entities/simulation.entity";
@@ -33,17 +32,14 @@ export class UserEntity {
     @UpdateDateColumn()
     updatedAt: Date;
 
-    @DeleteDateColumn({nullable: true})
+    @DeleteDateColumn({ nullable: true })
     deletedAt: Date | null;
 
-    @OneToMany(()=> LettreMotivationEntity, (lettreMotivation: LettreMotivationEntity)=> lettreMotivation.user )
+    @OneToMany(() => LettreMotivationEntity, (lettreMotivation: LettreMotivationEntity) => lettreMotivation.user)
     lettresMotivation: LettreMotivationEntity[];
 
     @OneToMany(() => OpportunityEntity, (opportunity: OpportunityEntity) => opportunity.user)
     opportunities: OpportunityEntity[];
-
-    @OneToMany(() => JobOfferEntity, (jobOffer: JobOfferEntity) => jobOffer.user)
-    jobOffers: JobOfferEntity[];
 
     @OneToMany(() => SavedArticleEntity, (savedArticle: SavedArticleEntity) => savedArticle.user)
     savedArticles: SavedArticleEntity[];

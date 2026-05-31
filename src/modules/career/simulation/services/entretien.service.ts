@@ -82,14 +82,13 @@ export class EntretienService {
     private answerEvaluator: AnswerEvaluatorService,
     private reportGenerator: ReportGeneratorService,
     private speechService: SpeechService,
-  ) {}
+  ) { }
 
   async start(userId: string, dto: CreateEntretienDto) {
     const profile = await this.profileRepo.findOne({
       where: { user: { id: userId } },
     });
     if (!profile) throw new NotFoundException('Profile not found');
-
     const user = await this.userRepo.findOne({
       where: { id: userId },
     });

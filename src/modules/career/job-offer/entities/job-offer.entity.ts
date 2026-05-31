@@ -1,59 +1,83 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { UserEntity } from '../../../user/entities/user.entity';
+  PrimaryColumn,
+} from "typeorm";
+import { UserEntity } from "src/modules/user/entities/user.entity";
 
-@Entity()
-export class JobOffer {
-  @PrimaryGeneratedColumn('uuid')
+@Entity("job_offer")
+export class JobOfferEntity {
+  @PrimaryColumn({ type: "varchar" })
   id: string;
+
+  @Column({ type: "varchar" })
+  source: string;
 
   @Column()
   title: string;
 
-  @Column({ nullable: true })
+  @Column({
+    type: "text",
+    nullable: true,
+  })
   company: string;
 
-  @Column({ nullable: true })
-  location: string;
-
-  @Column({ default: false })
-  remote: boolean;
-
-  @Column({ nullable: true })
-  experienceLevel: string;
-
-  @Column({ nullable: true })
-  salaryMin: number;
-
-  @Column({ nullable: true })
-  salaryMax: number;
-
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text" })
   description: string;
 
-  @Column({ nullable: true })
-  url: string;
+  @Column({ type: "text", nullable: true })
+  excerpt: string | null;
 
-  @Column({ nullable: true })
-  source: string;
-
-  @Column({ type: 'jsonb', nullable: true })
-  extractedSkills: { skill_name: string; importance: number }[];
-
-  @Column({ type: 'vector', length: 384, nullable: true })
-  embedding: number[];
-
-  @ManyToOne(() => UserEntity, (user: UserEntity) => user.jobOffers, {
+  @Column({
+    type: "text",
     nullable: true,
-    onDelete: 'SET NULL',
   })
-  user?: UserEntity;
+  employmentType: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  workArrangement: string;
+
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  seniorityLevel: string;
+
+  @Column({ type: "varchar", nullable: true })
+  jobFunction: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  location: string | null;
+
+  @Column({ type: "jsonb", default: [] })
+  skillsRequired: string[];
+
+  @Column({ type: "int", nullable: true })
+  salaryMin: number | null;
+
+  @Column({ type: "int", nullable: true })
+  salaryMax: number | null;
+
+  @Column({ type: "varchar", length: 3, nullable: true })
+  salaryCurrency: string | null;
+
+  @Column({ type: "int", nullable: true })
+  requiredExperienceYears: number | null;
+
+  @Column({ type: "jsonb", nullable: true })
+  educationRequired: { level: string; field: string } | null;
+
+  @Column({ type: "jsonb", nullable: true })
+  vector: number[] | null;
+
+  @Column({ type: "timestamp", nullable: true })
+  postedAt: Date | null;
+
+  @Column()
+  url: string;
 }
