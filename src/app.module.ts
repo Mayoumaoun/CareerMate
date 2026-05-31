@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CareerModule } from './modules/career/career.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -89,7 +89,7 @@ function getNumberConfig(
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
         type: 'postgres',
         host: getStringConfig(configService, 'DB_HOST'),
         port: getNumberConfig(configService, 'DB_PORT'),

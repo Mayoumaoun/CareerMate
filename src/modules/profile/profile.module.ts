@@ -14,11 +14,13 @@ import { ValidateAgeMinimumPipe } from "./pipes/validate-age-minimum.pipe";
 import { ValidateDatesPipe } from "./pipes/validate-dates.pipe";
 import { ValidateSkillsPipe } from "./pipes/validate-skills.pipe";
 import { CvModule } from "../cv/cv.module";
+import { ProjectsController } from "./projects.controller";
+import { ProjectsService } from "./projects.service";
 
 @Module({
     imports: [TypeOrmModule.forFeature([CvEntity, ProfileEntity, ProjectEntity, UserEntity, UserPreferencesEntity]), forwardRef(() => AuthModule), ConfigModule, CvModule],
-    providers: [ProfileService, CvParserService, ValidateAgeMinimumPipe, ValidateDatesPipe, ValidateSkillsPipe],
-    controllers: [ProfileController],
+    providers: [ProfileService, CvParserService, ProjectsService, ValidateAgeMinimumPipe, ValidateDatesPipe, ValidateSkillsPipe],
+    controllers: [ProfileController,ProjectsController],
     exports: [ProfileService]
 })
 export class ProfileModule {}
