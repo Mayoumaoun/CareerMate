@@ -20,6 +20,7 @@ import { JobOfferModule } from './modules/career/job-offer/job-offer.module';
 import { SimulationType } from './modules/career/simulation/entities/simulation.entity';
 import { SimulationModule } from './modules/career/simulation/entretien.module';
 import { RoadmapModule } from './modules/career/roadmap/roadmap.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -97,7 +98,7 @@ function getNumberConfig(
         password: getStringConfig(configService, 'DB_PASSWORD', 'postgres'),
         database: getStringConfig(configService, 'DB_NAME', 'careermate'),
         autoLoadEntities: true,
-        synchronize: false,
+        synchronize: true,
         dropSchema: false,
       }),
     }),
@@ -115,7 +116,8 @@ function getNumberConfig(
     JobMatchingModule,
     CandidatureModule,
     SimulationModule,
-    RoadmapModule
+    RoadmapModule,
+    ChatModule
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -123,6 +125,7 @@ function getNumberConfig(
 export class AppModule {
   constructor(private configService: ConfigService) {
     console.log("DB PASS:", this.configService.get('DB_PASSWORD'));
+    console.log(process.env.GROQ_API_KEY);
   }
 }
 

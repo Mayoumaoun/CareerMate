@@ -272,7 +272,7 @@ CLASSIFICATION RULES (strictly follow):
         "optimized_cv": optimized,
         "personal_info": personal_info,
         #THOSE ARE DEBUGING RETURNS ONLY;mayybe will do another non public /optimize/debug to return those ultèrieurement ; but now ok => TODO
-        # "ats_before": ats_before["total"],
+        "ats_before": ats_before["total"],
         "ats_after": ats_after["total"],
         # "ats_details": ats_before,
         # "rag_examples_used": len(similar_chunks)
@@ -399,3 +399,117 @@ Return ONLY valid JSON with this structure:
         "generated_cv": generated,
         "profile_name": profile.get("name", ""),
     }
+
+
+# ============== CHAT ENDPOINT ==============
+
+class ChatMessage(BaseModel):
+    role: str  # "user" or "assistant"
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    user_profile: dict = {}
+    conversation_history: list[ChatMessage] = []
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    """
+    Career coaching chatbot with streaming responses.
+    Personalizes answers based on user profile and conversation history.
+    """
+    
+    try:
+        # Build personalized context from user profile
+        profile_context = ""
+        if req.user_profile:
+            name = req.user_profile.get('name', 'the user')
+            level = req.user_profile.get('level', 'Student')
+            skills = req.user_profile.get('skills', [])
+            if isinstance(skills, list) and skills:
+                skills_str = ', '.join(skills[:8])
+            else:
+                skills_str = ''
+            
+            education = req.user_profile.get('education', '')
+            bio = req.user_profile.get('bio', '')
+            goal = req.user_profile.get('career_goal', '')
+            
+            profile_context = f"""
+User Context:
+- Name: {name}
+- Level: {level}
+- Skills: {skills_str}
+- Education: {education}
+- Bio: {bio}
+- Career Goal: {goal}
+
+Tailor your advice specifically to their profile and goals."""
+        
+        system_prompt = f"""You are CareerMate AI, a friendly and expert career assistant. 
+You help students and young professionals with:
+- CV and resume optimization
+- Cover letter writing
+- Job search strategies  
+- Interview preparation and mock interviews
+- Career planning and skill development
+- Understanding job requirements and market trends
+- LinkedIn profile optimization
+- Personal branding tips
+- Salary negotiation advice
+- Dealing with job rejection and career transitions
+
+{profile_context}
+
+IMPORTANT RULES:
+1. Keep responses concise (3-5 sentences max unless the user asks for detail or examples)
+2. Be encouraging, practical, and specific - never give generic advice
+3. If asked about something unrelated to career, politely redirect
+4. When suggesting CV changes, be specific about what to add/change and why
+5. Always consider the user's experience level when giving advice
+6. If you don't know something, say so honestly
+7. Provide actionable next steps when relevant
+
+Style: Professional but friendly, with clear structure when giving multiple points."""
+
+        # Build messages for API call
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        # Add conversation history (last 6 messages = 3 exchanges) for context
+        for msg in req.conversation_history[-6:]:
+            messages.append({
+                "role": msg.role,
+                "content": msg.content
+            })
+        
+        # Add current user message
+        messages.append({"role": "user", "content": req.message})
+
+        # Stream response from Groq
+        def generate():
+            """Generator function for streaming response"""
+            try:
+                stream = groq_client.chat.completions.create(
+                    model="meta-llama/llama-4-scout-17b-16e-instruct",
+                    messages=messages,
+                    temperature=0.7,
+                    stream=True,
+                    max_tokens=500,
+                    top_p=0.95,
+                )
+                
+                for chunk in stream:
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        content = chunk.choices[0].delta.content
+                        yield content
+                        
+            except Exception as e:
+                yield f"\n\n[Error]: Unable to generate response - {str(e)}"
+
+        return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Chat service error: {str(e)}"
+        )
