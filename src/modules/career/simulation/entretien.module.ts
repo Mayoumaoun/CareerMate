@@ -13,6 +13,7 @@ import { Simulation } from './entities/simulation.entity';
 import { JobOfferEntity } from '../job-offer/job-offer.entity';
 import { ProfileEntity } from '../../profile/entities/profile.entity';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
+import { JobDescriptionCleanerService } from 'src/common/services/job-description-cleaner.service';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { UserEntity } from 'src/modules/user/entities/user.entity';
     AnswerEvaluatorService,
     ReportGeneratorService,
     SpeechService,
+    JobDescriptionCleanerService,
   ],
 })
 export class SimulationModule {}

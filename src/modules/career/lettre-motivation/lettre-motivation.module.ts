@@ -9,6 +9,7 @@ import { ProfileEntity } from '../../profile/entities/profile.entity';
 import { JobOfferEntity } from '../job-offer/job-offer.entity';
 import { PdfExportService } from './pdf-export.service';
 import { ProfileModule } from 'src/modules/profile/profile.module';
+import { JobDescriptionCleanerService } from 'src/common/services/job-description-cleaner.service';
 
 
 @Module({
@@ -26,6 +27,7 @@ import { ProfileModule } from 'src/modules/profile/profile.module';
     CompanyResearchService,
     PromptBuilderService,
     PdfExportService,
+    JobDescriptionCleanerService,
   ],
 })
 export class LettreMotivationModule {}

@@ -97,7 +97,7 @@ function getNumberConfig(
         password: getStringConfig(configService, 'DB_PASSWORD'),
         database: getStringConfig(configService, 'DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: false,
         dropSchema: false,
       }),
     }),

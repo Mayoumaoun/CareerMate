@@ -15,6 +15,7 @@ import {
   GenerateLettreMotivationDto,
 } from './dto/generate-lettre-motivation.dto';
 import { ProfileService } from 'src/modules/profile/profile.service';
+import { JobDescriptionCleanerService } from 'src/common/services/job-description-cleaner.service';
 
 @Injectable()
 export class LettreMotivationService {
@@ -25,19 +26,21 @@ export class LettreMotivationService {
     private lettreRepo: Repository<LettreMotivationEntity>,
 
     private profileService: ProfileService,
+    private jobDescriptionCleaner: JobDescriptionCleanerService,
 
     @InjectRepository(JobOfferEntity)
     private jobOfferRepo: Repository<JobOfferEntity>,
 
     private companyResearch: CompanyResearchService,
     private promptBuilder: PromptBuilderService,
-  ) { }
+  ) {}
 
   async generate(userId: string, dto: GenerateLettreMotivationDto) {
-
+    // 1. Récupération du profil
     const profile = await this.profileService.getProfile(userId);
     if (!profile) throw new NotFoundException('Profile not found');
 
+    // 2. Résolution de l'offre d'emploi
     let company = dto.company;
     let position = dto.position;
     let jobDescription = dto.jobDescription;
@@ -56,29 +59,35 @@ export class LettreMotivationService {
       throw new BadRequestException('company and position are required');
     }
 
-    const previousFeedbacks = await this.lettreRepo.find({
-      where: {
-        user: { id: userId },
-        liked: Not(IsNull()),
-      },
-      order: { createdAt: 'DESC' },
-      take: 5,
-    });
+    // 3. Lancement en parallèle — feedbacks + recherche entreprise + nettoyage description
+    const [previousFeedbacks, { summary, sources }, cleanedDescription] =
+      await Promise.all([
+        this.lettreRepo.find({
+          where: {
+            user: { id: userId },
+            liked: Not(IsNull()),
+          },
+          order: { createdAt: 'DESC' },
+          take: 5,
+        }),
+        this.companyResearch.research(company, position),
+        jobDescription
+          ? this.jobDescriptionCleaner.clean(jobDescription, position)
+          : Promise.resolve(undefined),
+      ]);
 
-    const { summary, sources } = await this.companyResearch.research(
-      company,
-      position,
-    );
-
+    // 4. Construction du prompt
     const prompt = this.promptBuilder.build(
       profile,
       company,
       position,
       dto.tone,
       summary,
-      jobDescription,
+      cleanedDescription,
       previousFeedbacks,
     );
+
+    // 5. Appel LLM
     const completion = await this.groq.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       temperature: 0.3,
@@ -99,6 +108,7 @@ export class LettreMotivationService {
     const raw = completion.choices[0].message.content ?? '';
     const letter = raw.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
+    // 6. Sauvegarde
     const saved = await this.lettreRepo.save(
       this.lettreRepo.create({
         content: letter,

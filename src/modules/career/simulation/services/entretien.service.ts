@@ -26,6 +26,7 @@ import { CreateEntretienDto } from '../dto/create-entretien.dto';
 import { SubmitAnswerDto } from '../dto/submit-answer.dto';
 import { SimulationMode } from '../entities/simulation.entity';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
+import { JobDescriptionCleanerService } from 'src/common/services/job-description-cleaner.service';
 
 const questionTypeMaps: Record<EntretienType, Record<number, QuestionType>> = {
   [EntretienType.TECHNIQUE]: {
@@ -82,6 +83,7 @@ export class EntretienService {
     private answerEvaluator: AnswerEvaluatorService,
     private reportGenerator: ReportGeneratorService,
     private speechService: SpeechService,
+    private jobDescriptionCleaner: JobDescriptionCleanerService,
   ) { }
 
   async start(userId: string, dto: CreateEntretienDto) {
@@ -116,7 +118,12 @@ export class EntretienService {
     const level = dto.level ?? EntretienLevel.JUNIOR;
     const entretienType = dto.entretienType ?? EntretienType.MIXTE;
     const mode = dto.mode ?? SimulationMode.TEXT;
-
+    if (jobDescription) {
+      jobDescription = await this.jobDescriptionCleaner.clean(
+        jobDescription,
+        position,
+      );
+    }
     const questions = await this.questionGenerator.generateQuestions(
       profile,
       company,
