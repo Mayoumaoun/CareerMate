@@ -114,7 +114,7 @@ export class JobRankerService {
     const loc = (job.location || '').toLowerCase();
     if (loc.includes('tunisia') || loc.includes('tn')) {
       score += 0.15;
-    } else if (job.remote === true || loc.includes('remote')) {
+    } else if (job.workArrangement?.toLowerCase() === 'remote' || loc.includes('remote')) {
       score += 0.10;
     }
 
@@ -158,18 +158,24 @@ export class JobRankerService {
     const job = candidate.job;
     return {
       id: job.id,
+      source: job.source,
       title: job.title,
       company: job.company,
-      location: job.location,
-      remote: job.remote,
-      salaryMin: job.salaryMin,
-      salaryMax: job.salaryMax,
-      contractType: job.contractType,
       description: job.description,
-      skillsRequired: job.skillsRequired,
-      postedAt: job.postedAt,
+      excerpt: job.excerpt ?? null,
+      employmentType: job.employmentType,
+      workArrangement: job.workArrangement,
+      seniorityLevel: job.seniorityLevel ?? null,
+      jobFunction: job.jobFunction ?? null,
+      location: job.location ?? null,
+      skillsRequired: job.skillsRequired ?? [],
+      salaryMin: job.salaryMin ?? null,
+      salaryMax: job.salaryMax ?? null,
+      salaryCurrency: job.salaryCurrency ?? null,
+      requiredExperienceYears: job.requiredExperienceYears ?? null,
+      educationRequired: job.educationRequired ?? null,
+      postedAt: job.postedAt ?? null,
       url: job.url,
-      source: job.source,
       score: candidate.score,
       skillOverlap: candidate.skillOverlap,
       matchedSkills: candidate.matchedSkills,

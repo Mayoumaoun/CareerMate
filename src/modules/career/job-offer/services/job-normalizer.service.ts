@@ -63,6 +63,157 @@ export class JobNormalizerService implements OnModuleInit {
     return text.substring(0, 2000).replace(/\s+/g, ' ');
   }
 
+
+  /**
+   * Generate a clean, sentence-boundary-aware excerpt from description text.
+   */
+  private generateExcerpt(description: string, maxLength = 300): string {
+    if (!description) return '';
+    const text = description.replace(/\s+/g, ' ').trim();
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    let excerpt = '';
+    for (const sentence of sentences) {
+      const trimmed = sentence.trim();
+      if (!trimmed) continue;
+      if (excerpt.length + trimmed.length + 1 > maxLength) break;
+      excerpt += (excerpt ? ' ' : '') + trimmed;
+    }
+    return excerpt || text.substring(0, maxLength).replace(/\s+\S*$/, '') + '…';
+  }
+
+  /**
+   * Detect seniority level from text, with fallback to experience years.
+   */
+  private detectSeniority(text: string, experienceYears?: number | null): string | null {
+    const patterns: [string, RegExp][] = [
+      ['junior', /\b(junior|débutant|entry.?level|stagiaire)\b/i],
+      ['mid', /\b(confirmé|intermédiaire|mid.?level)\b/i],
+      ['senior', /\b(senior|expérimenté|lead|principal|chef|directeur|head\s+of)\b/i],
+    ];
+    for (const [level, regex] of patterns) {
+      if (regex.test(text)) return level;
+    }
+    if (experienceYears != null) {
+      if (experienceYears <= 2) return 'junior';
+      if (experienceYears <= 5) return 'mid';
+      return 'senior';
+    }
+    return null;
+  }
+
+  /**
+   * Detect job function/department from title and description.
+   */
+  private detectJobFunction(title: string, description: string): string | null {
+    const functions: [string, RegExp][] = [
+      ['Engineering', /\b(développ|engineer|software|backend|frontend|fullstack|full.?stack|devops|sre|cloud|programmeur|développeur)\b/i],
+      ['Data', /\b(data\s*(scientist|engineer|analyst)|machine\s*learning|big\s*data|analytics|business\s*intelligence|ia\b|ai\b)\b/i],
+      ['Design', /\b(ui\/?ux|design|graphi[sc]|figma|creative|webdesign)\b/i],
+      ['Marketing', /\b(marketing|seo|sem|growth|brand|community\s*manager|social\s*media|content\s*manager)\b/i],
+      ['Sales', /\b(vente|commercial|sales|account\s*manager|business\s*develop)\b/i],
+      ['Finance', /\b(financ|compta|accounting|audit|contrôle\s*de\s*gestion)\b/i],
+      ['HR', /\b(ressources\s*humaines|rh\b|human\s*resources|hr\b|recrutement|talent)\b/i],
+      ['Operations', /\b(opérations?|logistics?|supply\s*chain|procurement)\b/i],
+      ['Support', /\b(support|helpdesk|service\s*client|customer\s*success)\b/i],
+      ['QA', /\b(qa\b|quality\s*assurance|test(ing|eur)?|assurance\s*qualité)\b/i],
+      ['Project Mgmt', /\b(chef\s*de\s*projet|project\s*manage|scrum\s*master|product\s*owner|agile)\b/i],
+      ['Security', /\b(cyber|sécurité|security|soc\b|pentest|infosec)\b/i],
+      ['Network/Sys', /\b(réseau|network|système|system\s*admin|sysadmin|infrastructure)\b/i],
+    ];
+    // Title first (higher signal)
+    for (const [fn, regex] of functions) {
+      if (regex.test(title)) return fn;
+    }
+    for (const [fn, regex] of functions) {
+      if (regex.test(description)) return fn;
+    }
+    return null;
+  }
+
+  /**
+   * Extract required years of experience from text.
+   */
+  private parseExperienceYears(text: string): number | null {
+    const patterns = [
+      /(\d+)\s*(?:\+\s*)?ans?\s*d[''\u2019]expérience/i,
+      /expérience\s*(?:de\s*)?(?:minimum\s*)?(?:au\s*moins\s*)?(\d+)\s*(?:\+\s*)?ans?/i,
+      /minimum\s*(\d+)\s*ans?/i,
+      /au\s*moins\s*(\d+)\s*ans?/i,
+      /(\d+)\s*(?:à|-)\s*\d+\s*ans?\s*d[''\u2019]expérience/i,
+      /(\d+)\s*\+?\s*years?\s*(?:of\s*)?experience/i,
+      /experience\s*(?:of\s*)?(\d+)\s*\+?\s*years?/i,
+      /at\s*least\s*(\d+)\s*years?/i,
+    ];
+    for (const regex of patterns) {
+      const match = text.match(regex);
+      if (match) {
+        const years = parseInt(match[1], 10);
+        if (years >= 0 && years <= 30) return years;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Detect education requirements (level + field) from text.
+   */
+  private detectEducation(text: string): { level: string; field: string } | null {
+    const levelPatterns: [RegExp, string][] = [
+      [/bac\s*\+\s*5|master|ingénieur|mastère|diplôme\s*d.ingénieur/i, 'Master'],
+      [/bac\s*\+\s*3|licence|bachelor/i, 'Bachelor'],
+      [/bac\s*\+\s*2|bts|dut|technicien\s*supérieur/i, 'Associate'],
+      [/doctorat|phd|thèse/i, 'PhD'],
+      [/master'?s?\s*degree/i, 'Master'],
+      [/bachelor'?s?\s*degree/i, 'Bachelor'],
+    ];
+    const fieldPatterns: [RegExp, string][] = [
+      [/\b(informatique|computer\s*science|génie\s*logiciel|software\s*engineering)\b/i, 'Computer Science'],
+      [/\b(gestion|management|business|commerce)\b/i, 'Business'],
+      [/\b(électrique|electrical|électronique|electronic)\b/i, 'Electrical Engineering'],
+      [/\b(mathématiques?|mathematics?|statistiques?)\b/i, 'Mathematics'],
+      [/\b(télécom|telecom)\b/i, 'Telecommunications'],
+      [/\b(mécanique|mechanical)\b/i, 'Mechanical Engineering'],
+      [/\b(comptabilité|finance)\b/i, 'Finance'],
+    ];
+
+    let level: string | null = null;
+    for (const [regex, lvl] of levelPatterns) {
+      if (regex.test(text)) { level = lvl; break; }
+    }
+    if (!level) return null;
+
+    let field = 'General';
+    for (const [regex, f] of fieldPatterns) {
+      if (regex.test(text)) { field = f; break; }
+    }
+    return { level, field };
+  }
+
+  /**
+   * Enrich a job with metadata extracted from its title/description.
+   * Acts as a safety net — only fills in fields that are still null.
+   */
+  private enrichJobMetadata(job: RawJobOffer): RawJobOffer {
+    const text = `${job.title} ${job.description}`;
+
+    if (!job.requiredExperienceYears) {
+      job.requiredExperienceYears = this.parseExperienceYears(text);
+    }
+    if (!job.seniorityLevel) {
+      job.seniorityLevel = this.detectSeniority(text, job.requiredExperienceYears);
+    }
+    if (!job.jobFunction) {
+      job.jobFunction = this.detectJobFunction(job.title, job.description);
+    }
+    if (!job.educationRequired) {
+      job.educationRequired = this.detectEducation(text);
+    }
+    if (!job.excerpt) {
+      job.excerpt = this.generateExcerpt(job.description);
+    }
+    return job;
+  }
+
   async normalizeAndPersist(rawJobs: RawJobOffer[]): Promise<void> {
     if (!rawJobs.length) return;
 
@@ -94,26 +245,34 @@ export class JobNormalizerService implements OnModuleInit {
           continue;
         }
 
+        // Enrich metadata from description text (safety net for all sources)
+        this.enrichJobMetadata(job);
+
         // Generate embedding
         const textToEmbed = this.prepareTextForEmbedding(job);
         const output = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
         const vector = Array.from(output.data) as number[];
 
         const isNew = await this.jobOfferRepository.upsertJob({
+          id,
+          source: job.source,
           title: job.title,
           company: job.company,
-          location: job.location,
-          remote: job.remote,
-          salaryMin: job.salaryMin,
-          salaryMax: job.salaryMax,
-          contractType: job.contractType,
           description: job.description,
+          excerpt: job.excerpt ?? null,
+          employmentType: job.employmentType,
+          workArrangement: job.workArrangement,
+          seniorityLevel: job.seniorityLevel ?? null,
+          jobFunction: job.jobFunction ?? null,
+          location: job.location ?? null,
           skillsRequired: job.skillsRequired,
-          postedAt: job.postedAt,
+          salaryMin: job.salaryMin ?? null,
+          salaryMax: job.salaryMax ?? null,
+          salaryCurrency: job.salaryCurrency ?? null,
+          requiredExperienceYears: job.requiredExperienceYears ?? null,
+          educationRequired: job.educationRequired ?? null,
+          postedAt: job.postedAt ?? null,
           url: job.url,
-          source: job.source,
-          sourceMetadata: job.sourceMetadata,
-          id,
           vector,
         });
 
@@ -143,6 +302,9 @@ export class JobNormalizerService implements OnModuleInit {
         uniqueIds.add(id);
 
         try {
+          // Enrich metadata from description text (safety net for all sources)
+          this.enrichJobMetadata(job);
+
           const textToEmbed = this.prepareTextForEmbedding(job);
           const output = await extractor(textToEmbed, { pooling: 'mean', normalize: true });
           const vector = Array.from(output.data) as number[];

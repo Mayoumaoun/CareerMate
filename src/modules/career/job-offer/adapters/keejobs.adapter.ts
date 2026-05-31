@@ -15,18 +15,17 @@ export class KeejobsAdapter implements JobSourceAdapter {
 
   async fetchJobs(queries: string[], location: string): Promise<RawJobOffer[]> {
     const allJobs: RawJobOffer[] = [];
-    // Fallback to python microservice default port if not set
     const scraperUrl = this.configService.get<string>('SCRAPER_URL', 'http://localhost:8000');
     const seenUrls = new Set<string>();
 
     try {
       this.logger.debug(`Triggering Keejobs scraper for ${queries.length} queries`);
-      // Send a single POST request to scrape all queries
+
       const response = await lastValueFrom(
         this.httpService.post(
           `${scraperUrl}/scrape/keejob`,
           { queries, location },
-          { timeout: 60_000 } // Scrapers can be slow
+          { timeout: 120_000 },
         ),
       );
 
@@ -39,19 +38,36 @@ export class KeejobsAdapter implements JobSourceAdapter {
         seenUrls.add(url);
 
         allJobs.push({
+          source: 'keejobs',
+
           title: job.title ?? 'Untitled',
           company: job.company ?? 'Unknown',
-          location: job.location ?? 'Tunisia',
-          remote: job.remote === true || (job.location ?? '').toLowerCase().includes('remote'),
-          salaryMin: null,
-          salaryMax: null,
-          contractType: job.contract_type ?? null,
+
           description: this.sanitizeDescription(job.description ?? ''),
+          excerpt: job.excerpt ?? null,
+
+          employmentType: this.normalizeEmploymentType(job.contract_type),
+
+
+          workArrangement: job.work_arrangement ?? 'on-site',
+
+          seniorityLevel: job.seniority_level ?? null,
+          jobFunction: job.job_function ?? null,
+
+          location: job.location ?? location ?? null,
+
           skillsRequired: Array.isArray(job.skills) ? job.skills.filter(Boolean) : [],
+
+          salaryMin: job.salary_min ?? null,
+          salaryMax: job.salary_max ?? null,
+          salaryCurrency: job.salary_currency ?? (job.salary_min != null ? 'TND' : null),
+
+          requiredExperienceYears: job.required_experience_years ?? null,
+          educationRequired: job.education_required ?? null,
+
           postedAt: this.parseDate(job.posted_at),
+
           url,
-          source: 'keejobs',
-          sourceMetadata: job.sourceMetadata ?? {},
         });
       }
     } catch (error) {
@@ -62,19 +78,37 @@ export class KeejobsAdapter implements JobSourceAdapter {
     return allJobs;
   }
 
-  private parseDate(dateStr: string): Date {
-    if (!dateStr) return new Date();
-    
-    // Check if format is DD/MM/YYYY
-    const match = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-    if (match) {
-      const [_, day, month, year] = match;
-      return new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00Z`);
+  private normalizeEmploymentType(contractType: string | null | undefined): string {
+    if (!contractType) return 'unspecified';
+    switch (contractType.toUpperCase()) {
+      case 'CDI': return 'full-time';
+      case 'CDD': return 'contract';
+      case 'SIVP':
+      case 'CIVP':
+      case 'STAGE': return 'internship';
+      case 'FREELANCE': return 'freelance';
+      default: return contractType.toLowerCase();
     }
-    
-    // Fallback to standard JS date parsing
+  }
+
+  private parseDate(dateStr: string | null | undefined): Date | null {
+    if (!dateStr) return null;
+
+    const isoMatch = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) {
+      return new Date(`${dateStr}T00:00:00Z`);
+    }
+
+    const dmyMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    if (dmyMatch) {
+      const [, day, month, year] = dmyMatch;
+      return new Date(
+        `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00Z`,
+      );
+    }
+
     const parsed = new Date(dateStr);
-    return isNaN(parsed.getTime()) ? new Date() : parsed;
+    return isNaN(parsed.getTime()) ? null : parsed;
   }
 
   private sanitizeDescription(desc: string): string {

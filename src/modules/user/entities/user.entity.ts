@@ -30,17 +30,14 @@ export class UserEntity {
     @UpdateDateColumn()
     updatedAt: Date;
 
-    @DeleteDateColumn({nullable: true})
+    @DeleteDateColumn({ nullable: true })
     deletedAt: Date | null;
 
-    @OneToMany(()=> LettreMotivationEntity, (lettreMotivation: LettreMotivationEntity)=> lettreMotivation.user )
+    @OneToMany(() => LettreMotivationEntity, (lettreMotivation: LettreMotivationEntity) => lettreMotivation.user)
     lettresMotivation: LettreMotivationEntity[];
 
     @OneToMany(() => OpportunityEntity, (opportunity: OpportunityEntity) => opportunity.user)
     opportunities: OpportunityEntity[];
-
-    @OneToMany(() => JobOfferEntity, (jobOffer: JobOfferEntity) => jobOffer.user)
-    jobOffers: JobOfferEntity[];
 
     @OneToMany(() => SavedArticleEntity, (savedArticle: SavedArticleEntity) => savedArticle.user)
     savedArticles: SavedArticleEntity[];

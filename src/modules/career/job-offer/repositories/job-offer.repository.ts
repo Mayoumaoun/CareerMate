@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
-import { JobOfferEntity, JobOfferStatus } from '../entities/job-offer.entity';
+import { JobOfferEntity } from '../entities/job-offer.entity';
 
 @Injectable()
 export class JobOfferRepository extends Repository<JobOfferEntity> {
@@ -35,11 +35,10 @@ export class JobOfferRepository extends Repository<JobOfferEntity> {
         SELECT j.*
         FROM job_offer j
         WHERE j.vector IS NOT NULL
-          AND j.status = $3
         ORDER BY j.vector::text::vector(384) <=> $1::vector(384)
         LIMIT $2;
         `,
-        [vectorString, limit, JobOfferStatus.ACTIVE],
+        [vectorString, limit],
       );
 
       return jobs;
@@ -53,7 +52,6 @@ export class JobOfferRepository extends Repository<JobOfferEntity> {
       );
 
       return this.find({
-        where: { status: JobOfferStatus.ACTIVE },
         order: { postedAt: 'DESC' },
         take: limit,
       });
@@ -89,7 +87,6 @@ export class JobOfferRepository extends Repository<JobOfferEntity> {
     const results = await this.createQueryBuilder('job')
       .select('job.source', 'source')
       .addSelect('COUNT(*)', 'count')
-      .where('job.status = :status', { status: JobOfferStatus.ACTIVE })
       .groupBy('job.source')
       .getRawMany();
 

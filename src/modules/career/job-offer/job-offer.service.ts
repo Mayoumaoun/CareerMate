@@ -11,7 +11,6 @@ import { JobRankerService } from './services/job-ranker.service';
 import { MatchExplainerService } from './services/match-explainer.service';
 import { JobSearchResponseDto, RankedJobDto } from './dto/job.dto';
 import { JobOfferRepository } from './repositories/job-offer.repository';
-import { JobOfferStatus } from './entities/job-offer.entity';
 
 export interface JobSearchFilters {
   skills?: string[];
@@ -39,7 +38,6 @@ export class JobOfferService {
 
   async getAllOffers(): Promise<any[]> {
     return this.jobOfferRepository.find({
-      where: { status: JobOfferStatus.ACTIVE },
       order: { postedAt: 'DESC' },
       take: 100,
     });
@@ -107,7 +105,7 @@ export class JobOfferService {
       if (filters.location && filters.location.length > 0) {
         const jobLoc = (job.location || '').toLowerCase();
         const locMatch = filters.location.some(l => 
-          (l.toLowerCase() === 'remote' && job.remote) || 
+          (l.toLowerCase() === 'remote' && job.workArrangement?.toLowerCase() === 'remote') || 
           jobLoc.includes(l.toLowerCase())
         );
         if (!locMatch) return false;

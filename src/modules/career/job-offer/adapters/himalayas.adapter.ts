@@ -9,7 +9,7 @@ export class HimalayasAdapter implements JobSourceAdapter {
   private static readonly BASE_URL = 'https://himalayas.app/jobs/api';
   private static readonly TIMEOUT_MS = 10_000;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) { }
 
   async fetchJobs(queries: string[], location: string): Promise<RawJobOffer[]> {
     const allJobs: RawJobOffer[] = [];
@@ -33,23 +33,39 @@ export class HimalayasAdapter implements JobSourceAdapter {
           seenUrls.add(url);
 
           allJobs.push({
+            source: 'himalayas',
+
             title: job.title ?? 'Untitled',
             company: job.companyName ?? 'Unknown',
-            location: job.location ?? 'Remote',
-            remote: true, // Himalayas is a remote-first job board
-            salaryMin: this.parseSalary(job.salaryCurrency, job.salaryMin),
-            salaryMax: this.parseSalary(job.salaryCurrency, job.salaryMax),
-            contractType: job.type ?? null,
             description: this.sanitizeDescription(job.description ?? ''),
+            excerpt: job.excerpt ?? null,
+
+            employmentType: job.employmentType
+              ? job.employmentType.toLowerCase().replace(' ', '-')
+              : 'unspecified',
+
+            workArrangement: job.locationRestrictions?.length
+              ? 'remote'
+              : 'remote',
+
+            seniorityLevel: null,
+            jobFunction: job.category?.[0] ?? null,
+
+            location: job.locationRestrictions?.join(', ') ?? null,
+
             skillsRequired: this.extractSkills(job),
-            postedAt: job.pubDate ? new Date(job.pubDate * 1000) : new Date(),
-            url,
-            source: 'himalayas',
-            sourceMetadata: {
-              himalayasId: job.id,
-              companyLogo: job.companyLogo,
-              categories: job.categories,
-            },
+
+            salaryMin: job.minSalary ?? null,
+            salaryMax: job.maxSalary ?? null,
+            salaryCurrency: job.currency ?? null,
+
+            requiredExperienceYears: null,
+            educationRequired: null,
+
+            postedAt: job.pubDate ? new Date(job.pubDate * 1000) : null,
+
+            url: job.applicationLink ?? '',
+
           });
         }
       } catch (error) {

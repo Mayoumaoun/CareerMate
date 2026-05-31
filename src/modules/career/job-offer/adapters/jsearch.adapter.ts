@@ -39,7 +39,7 @@ export class JSearchAdapter implements JobSourceAdapter {
               num_pages: '1',
               date_posted: 'month',
             },
-            timeout: 45_000,
+            timeout: 15_000,
           }),
         );
 
@@ -51,26 +51,55 @@ export class JSearchAdapter implements JobSourceAdapter {
           if (!url || seenUrls.has(url)) continue;
           seenUrls.add(url);
 
-          let jobLocation = job.job_city ? `${job.job_city}, ${job.job_country}` : (job.job_country ?? location);
-
           allJobs.push({
+            source: 'jsearch',
+
             title: job.job_title ?? 'Untitled',
             company: job.employer_name ?? 'Unknown',
-            location: jobLocation,
-            remote: job.job_is_remote === true,
+            description: this.sanitizeDescription(job.job_description ?? ''),
+            excerpt: job.job_highlights?.Responsibilities?.[0]
+              ?? job.job_highlights?.Qualifications?.[0]
+              ?? null,
+
+            employmentType: (job.job_employment_type ?? job.job_employment_types?.[0] ?? 'unspecified').toLowerCase(),
+
+            workArrangement: job.work_arrangement
+              ?? (job.job_is_remote === true ? 'remote' : 'on-site'),
+
+            seniorityLevel: job.seniority_level ?? null,
+            jobFunction: job.job_function ?? null,
+
+            location:
+              (
+                job.job_location ??
+                [job.job_city, job.job_state, job.job_country]
+                  .filter(Boolean)
+                  .join(', ')
+              ) || null,
+
+            skillsRequired: job.required_technologies?.filter(Boolean).length
+              ? job.required_technologies.filter(Boolean)
+              : [],
+
+
             salaryMin: job.job_min_salary ?? null,
             salaryMax: job.job_max_salary ?? null,
-            contractType: job.job_employment_type ?? null,
-            description: this.sanitizeDescription(job.job_description ?? ''),
-            skillsRequired: Array.isArray(job.job_required_skills) ? job.job_required_skills.filter(Boolean) : [],
-            postedAt: job.job_posted_at_datetime_utc ? new Date(job.job_posted_at_datetime_utc) : new Date(),
-            url,
-            source: 'jsearch',
-            sourceMetadata: {
-              jsearchId: job.job_id,
-              employerWebsite: job.employer_website,
-              employerLogo: job.employer_logo,
-            },
+
+            salaryCurrency: job.job_salary_currency ?? (job.job_min_salary ? 'USD' : null),
+
+            requiredExperienceYears: job.required_experience_years ?? null,
+            educationRequired: job.education_required
+              ? {
+                level: job.education_required.level,
+                field: job.education_required.field,
+              }
+              : null,
+
+            postedAt: job.job_posted_at_datetime_utc
+              ? new Date(job.job_posted_at_datetime_utc)
+              : null,
+
+            url: job.job_apply_link ?? job.job_google_link ?? '',
           });
         }
       } catch (error) {

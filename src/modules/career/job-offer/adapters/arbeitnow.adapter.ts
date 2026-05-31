@@ -9,7 +9,7 @@ export class ArbeitnowAdapter implements JobSourceAdapter {
   private static readonly BASE_URL = 'https://www.arbeitnow.com/api/job-board-api';
   private static readonly TIMEOUT_MS = 10_000;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(private readonly httpService: HttpService) { }
 
   async fetchJobs(queries: string[], location: string): Promise<RawJobOffer[]> {
     try {
@@ -27,22 +27,43 @@ export class ArbeitnowAdapter implements JobSourceAdapter {
 
       // Normalize all jobs first
       const allJobs: RawJobOffer[] = data.map((job: any) => ({
+        source: 'arbeitnow' as const,
+
         title: job.title ?? 'Untitled',
         company: job.company_name ?? 'Unknown',
-        location: job.location ?? 'Remote',
-        remote: job.remote === true,
-        salaryMin: null,
-        salaryMax: null,
-        contractType: null,
         description: this.sanitizeDescription(job.description ?? ''),
+        excerpt: null,   // not provided by Arbeitnow API
+
+        // job_types already lowercase (e.g. "full-time") — matches our convention
+        employmentType: job.job_types?.[0] ?? 'unspecified',
+
+        workArrangement: job.remote === true
+          ? 'remote'
+          : job.location?.toLowerCase().includes('hybrid')
+            ? 'hybrid'
+            : 'on-site',
+
+        seniorityLevel: null,   // not provided by Arbeitnow API
+        jobFunction: null,   // not provided by Arbeitnow API
+
+        // Keep raw location (e.g. "Berlin, Germany") when not just "Remote"
+        location: job.remote === true && job.location?.toLowerCase() === 'remote'
+          ? null
+          : job.location ?? null,
+
+        // Arbeitnow tags are the closest thing to skills
         skillsRequired: Array.isArray(job.tags) ? job.tags.filter(Boolean) : [],
-        postedAt: job.created_at ? new Date(job.created_at * 1000) : new Date(),
+
+        salaryMin: null,  // not provided by Arbeitnow API
+        salaryMax: null,  // not provided by Arbeitnow API
+        salaryCurrency: null,  // not provided by Arbeitnow API
+
+        requiredExperienceYears: null, // not provided by Arbeitnow API
+        educationRequired: null,   // not provided by Arbeitnow API
+
+        postedAt: job.created_at ? new Date(job.created_at * 1000) : null,
+
         url: job.url ?? '',
-        source: 'arbeitnow' as const,
-        sourceMetadata: {
-          slug: job.slug,
-          visa_sponsorship: job.visa_sponsorship,
-        },
       }));
 
       // Build search tokens from queries for local filtering

@@ -284,7 +284,6 @@ export interface MatchResultDto {
   jobId: string;
   title: string;
   company: string;
-  companyLogo?: string;
   location: string;
   remote: boolean;
   experienceLevel: string;
@@ -292,7 +291,6 @@ export interface MatchResultDto {
   salaryMax?: number;
   description: string;
   skills: string[];
-  score: number;
   matchedSkills: string[];
   missingSkills: string[];
 }

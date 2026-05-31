@@ -1,82 +1,83 @@
-import * as jsonSchemas from "src/common/types/json-schemas";
-import { Column, CreateDateColumn, Entity, Index, JoinColumn, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from "typeorm";
 import { UserEntity } from "src/modules/user/entities/user.entity";
-
-export enum JobOfferStatus {
-    ACTIVE = 'ACTIVE',
-    EXPIRED = 'expired',
-    CLOSED = 'closed',
-    ARCHIVED = 'ARCHIVED',
-    DRAFT = 'DRAFT',
-}
 
 @Entity("job_offer")
 export class JobOfferEntity {
-    @PrimaryColumn({ type: 'varchar' })
-    id: string;
+  @PrimaryColumn({ type: "varchar" })
+  id: string;
 
-    @Column()
-    title: string;
+  @Column({ type: "varchar" })
+  source: string;
 
-    @Column()
-    company: string;
+  @Column()
+  title: string;
 
-    @Column()
-    location: string;
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  company: string;
 
-    @Column({ default: false })
-    remote: boolean;
+  @Column({ type: "text" })
+  description: string;
 
-    @Column({ type: 'int', nullable: true })
-    salaryMin: number | null;
+  @Column({ type: "text", nullable: true })
+  excerpt: string | null;
 
-    @Column({ type: 'int', nullable: true })
-    salaryMax: number | null;
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  employmentType: string;
 
-    @Column({ type: 'varchar', nullable: true })
-    contractType: string | null;
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  workArrangement: string;
 
-    @Column({ type: 'text' })
-    description: string;
+  @Column({
+    type: "text",
+    nullable: true,
+  })
+  seniorityLevel: string;
 
-    @Column({ type: 'jsonb', default: [] })
-    skillsRequired: string[];
+  @Column({ type: "varchar", nullable: true })
+  jobFunction: string | null;
 
-    @Column({ type: 'jsonb', nullable: true })
-    sourceMetadata: Record<string, unknown> | null;
+  @Column({ type: "varchar", nullable: true })
+  location: string | null;
 
-    // Stored as jsonb for TypeORM compatibility; the repository handles
-    // casting to pgvector format for similarity queries.
-    @Column({ type: 'jsonb', nullable: true })
-    vector: number[] | null;
+  @Column({ type: "jsonb", default: [] })
+  skillsRequired: string[];
 
-    @Column()
-    url: string;
+  @Column({ type: "int", nullable: true })
+  salaryMin: number | null;
 
+  @Column({ type: "int", nullable: true })
+  salaryMax: number | null;
 
+  @Column({ type: "varchar", length: 3, nullable: true })
+  salaryCurrency: string | null;
 
-    @Column({ type: 'timestamp', nullable: true })
-    postedAt: Date | null;
+  @Column({ type: "int", nullable: true })
+  requiredExperienceYears: number | null;
 
-    @CreateDateColumn()
-    createdAt: Date;
+  @Column({ type: "jsonb", nullable: true })
+  educationRequired: { level: string; field: string } | null;
 
-    @UpdateDateColumn()
-    updatedAt: Date;
+  @Column({ type: "jsonb", nullable: true })
+  vector: number[] | null;
 
-    @Column({ type: 'timestamp', nullable: true })
-    expiresAt: Date | null;
+  @Column({ type: "timestamp", nullable: true })
+  postedAt: Date | null;
 
-    @Column()
-    source: string;
-
-    @Column({ type: 'enum', enum: JobOfferStatus, default: JobOfferStatus.ACTIVE })
-    status: JobOfferStatus;
-
-    @Column('jsonb', { nullable: true })
-    extraInfo: jsonSchemas.JobOfferEXtraInfo;
-
-    @ManyToOne(() => UserEntity, (user: UserEntity) => user.jobOffers, { nullable: true })
-    @JoinColumn()
-    user: UserEntity;
+  @Column()
+  url: string;
 }
