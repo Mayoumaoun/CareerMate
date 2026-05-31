@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CareerModule } from './modules/career/career.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -90,13 +90,13 @@ function getNumberConfig(
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService): TypeOrmModuleOptions => ({
         type: 'postgres',
-        host: getStringConfig(configService, 'DB_HOST', 'localhost'),
-        port: getNumberConfig(configService, 'DB_PORT', 5432),
-        username: getStringConfig(configService, 'DB_USERNAME', 'postgres'),
-        password: getStringConfig(configService, 'DB_PASSWORD', 'postgres'),
-        database: getStringConfig(configService, 'DB_NAME', 'careermate'),
+        host: getStringConfig(configService, 'DB_HOST'),
+        port: getNumberConfig(configService, 'DB_PORT'),
+        username: getStringConfig(configService, 'DB_USERNAME'),
+        password: getStringConfig(configService, 'DB_PASSWORD'),
+        database: getStringConfig(configService, 'DB_NAME'),
         autoLoadEntities: true,
         synchronize: true,
         dropSchema: false,

@@ -18,14 +18,46 @@ export class ProjectEntity {
     techStack: string[];
     @Column({type: 'text'})
     projectUrl: string;
-    @Column({type: 'text', nullable: true})
-    imageUrl: string | null;
+    @Column({ type: 'text', nullable: true })
+    githubUrl: string | null; 
+
+    @Column({ type: 'text', nullable: true })
+    githubFrontendUrl: string | null;
+
+    @Column({ type: 'text', nullable: true })
+    githubBackendUrl: string | null;
+
+    @Column({ type: 'text', nullable: true })
+    demoVideo: string | null;
+
+    @Column('text', { array: true, default: [] })
+    demoImages: string[];
+
+    @Column({ type: 'text', nullable: true })
+    workDone: string | null;
+
+    @Column('text', { array: true, default: [] })
+    features: string[];
+
+    @Column({ type: 'text', nullable: true })
+    imageUrl: string | null;    
+
+    @Column({ default: false })
+    isFrontend: boolean;
+
+    @Column({ default: false })
+    isBackend: boolean;
+
+    @Column({ type: 'date', nullable: true })
+    endDate: Date | null;
     @CreateDateColumn()
     createdAt: Date;
     @UpdateDateColumn()
     updatedAt: Date;
     @DeleteDateColumn({nullable: true})
     deletedAt: Date | null;
+    @Column({ default: true })
+    isPublic: boolean;
 
     @ManyToOne(() => ProfileEntity, (profile: ProfileEntity) => profile.projects, { nullable: false })
     @JoinColumn({ name: 'profileId' })

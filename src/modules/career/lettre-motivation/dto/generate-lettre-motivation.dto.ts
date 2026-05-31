@@ -1,4 +1,5 @@
-import { IsString, IsEnum, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsEnum, IsOptional, IsBoolean, IsUUID } from 'class-validator';
+import { UUID } from 'crypto';
 
 export enum Tone {
   PROFESSIONAL = 'professional',
@@ -17,15 +18,16 @@ export class GenerateLettreMotivationDto {
   position?: string;
 
   @IsEnum(Tone)
-  tone: Tone;
+  @IsOptional()
+  tone: Tone = Tone.PROFESSIONAL;
 
   @IsString()
   @IsOptional()
   jobDescription?: string;
 
-  @IsString()
+  @IsUUID()
   @IsOptional()
-  jobOfferId?: string; 
+  jobOfferId?: UUID; 
 }
 
 
